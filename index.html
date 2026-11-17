@@ -2683,6 +2683,34 @@ h1 .h1-mark{ -webkit-text-fill-color:var(--gold); opacity:1; font-size:1.15em; f
   #game-info .info-box{ padding:6px 4px; }
   .timer-box .t-val{ font-size:1.35rem; }
 }
+
+/* ---------- TERMS OF SERVICE GATE ---------- */
+#tos-screen{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:var(--bg);background-image:radial-gradient(ellipse at 50% -10%,color-mix(in srgb,var(--gold) 14%,transparent) 0%,transparent 55%)}
+#tos-screen.hidden{display:none !important}
+#tos-card{width:min(620px,100%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;gap:12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow-lg);animation:popIn .25s ease}
+.tos-warning{display:flex;gap:12px;align-items:flex-start;background:rgba(224,82,82,.12);border:1px solid rgba(224,82,82,.5);
+  color:var(--text);border-radius:10px;padding:12px 14px;font-size:1rem;line-height:1.4}
+.tos-warning strong{color:#ff7b7b}
+.tos-warning-ic{color:#ff7b7b;font-size:1.3rem;line-height:1}
+#tos-card h2{font-family:'Cinzel',serif;color:var(--gold);letter-spacing:3px;font-size:1.05rem;text-transform:uppercase;text-align:center}
+.tos-sub{color:var(--muted);text-align:center;font-size:.9rem;margin-top:-6px}
+#tos-scroll{flex:1;min-height:160px;overflow-y:auto;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;line-height:1.55;font-size:.95rem;color:var(--text)}
+#tos-scroll:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+#tos-scroll h4{font-family:'Cinzel',serif;color:var(--gold);font-size:.8rem;letter-spacing:1.5px;margin:14px 0 4px}
+#tos-scroll h4:first-child{margin-top:0}
+#tos-scroll p{color:var(--text);opacity:.9}
+#tos-scroll .tos-end{text-align:center;color:var(--muted);font-style:italic;margin-top:14px}
+#tos-scroll::-webkit-scrollbar{width:8px}
+#tos-scroll-hint{text-align:center;font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:1.5px;color:var(--gold);animation:livePulse 1.6s ease-in-out infinite}
+#tos-scroll-hint.done{visibility:hidden}
+#tos-check-label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:.92rem;line-height:1.4;color:var(--text);transition:opacity .2s}
+#tos-check-label.tos-disabled{opacity:.45;cursor:not-allowed}
+#tos-check{width:18px;height:18px;flex:none;margin-top:2px;padding:0;accent-color:var(--gold);cursor:inherit}
+#tos-accept{align-self:center;min-width:180px}
+@media(max-width:620px){#tos-card{padding:16px 14px}.tos-warning{font-size:.92rem}}
 </style>
 </head>
 
@@ -2716,6 +2744,61 @@ h1 .h1-mark{ -webkit-text-fill-color:var(--gold); opacity:1; font-size:1.15em; f
   <button class="am-item" onclick="signOutUser()">
     <span class="am-icon">↪</span> Sign Out
   </button>
+</div>
+
+<div id="tos-screen" role="dialog" aria-modal="true" aria-labelledby="tos-title">
+  <div id="tos-card">
+    <div class="tos-warning" role="alert">
+      <span class="tos-warning-ic" aria-hidden="true">⚠</span>
+      <div><strong>Heads up:</strong> people may say rude or hurtful things in the unfiltered chat rooms in lobbies.</div>
+    </div>
+
+    <h2 id="tos-title">Terms of Service</h2>
+    <p class="tos-sub">Please scroll through and read the terms below before continuing.</p>
+
+    <div id="tos-scroll" tabindex="0" aria-label="Terms of Service text">
+      <h4>1. Accepting these terms</h4>
+      <p>By using Chess Online ("the site") you agree to these Terms of Service. If you do not agree, please do not use the site.</p>
+
+      <h4>2. Unfiltered chat</h4>
+      <p>The game chat, lobby chat and live spectator chat are <strong>not filtered or moderated in real time</strong>. Other players may post language or content that is rude, offensive or hurtful. You use chat at your own risk. If something upsets you, you can leave the game or lobby at any time.</p>
+
+      <h4>3. How you should behave</h4>
+      <p>Be respectful to other players. Do not harass, threaten, bully or impersonate anyone, and do not post hateful, sexual, violent or illegal content. Do not share personal information such as your full name, address, phone number, school or passwords — yours or anyone else's.</p>
+
+      <h4>4. Fair play</h4>
+      <p>Do not cheat, use chess engines during games, exploit bugs, or try to interfere with other players' games, accounts or coins.</p>
+
+      <h4>5. Accounts and guests</h4>
+      <p>You can play as a guest or sign in with Google. Signed-in accounts store a display name, wins and coins so your progress is kept. Display names must follow the same rules as chat. Names that break these rules may be changed or removed.</p>
+
+      <h4>6. Coins and skins</h4>
+      <p>Coins and piece skins are for fun only. They have no real-world value, cannot be bought with real money, and cannot be traded or refunded. They may be changed or reset at any time.</p>
+
+      <h4>7. Music and content</h4>
+      <p>The site may play background music. You can pause it, change the volume or hide the player at any time.</p>
+
+      <h4>8. No guarantees</h4>
+      <p>The site is provided "as is". It may have bugs, go offline, or lose game data, and features can change without notice.</p>
+
+      <h4>9. Enforcement</h4>
+      <p>Players who break these terms may have their names, coins or access removed.</p>
+
+      <h4>10. Changes to these terms</h4>
+      <p>These terms may be updated. If they change, you may be asked to read and accept them again.</p>
+
+      <p class="tos-end">— End of Terms —</p>
+    </div>
+
+    <div id="tos-scroll-hint">Scroll to the bottom to continue ↓</div>
+
+    <label id="tos-check-label" class="tos-disabled">
+      <input type="checkbox" id="tos-check" disabled>
+      <span>I have read and acknowledge the Terms of Service, and I understand that chat is unfiltered and other players may say rude or hurtful things.</span>
+    </label>
+
+    <button id="tos-accept" disabled onclick="acceptTos()">Continue</button>
+  </div>
 </div>
 
 <div id="auth-screen">
@@ -6912,6 +6995,36 @@ function manualRefresh(btn,key,fn){
     setTimeout(tick,250);
   })();
 }
+
+/* ---------- TERMS OF SERVICE GATE ---------- */
+const TOS_VERSION='1';
+function _tosAccepted(){ try{ return localStorage.getItem('chess-tos-accepted')===TOS_VERSION; }catch(e){ return false; } }
+function initTos(){
+  const screen=document.getElementById('tos-screen');
+  if(!screen) return;
+  if(_tosAccepted()){ screen.classList.add('hidden'); return; }
+  const box=document.getElementById('tos-scroll');
+  const chk=document.getElementById('tos-check');
+  const lbl=document.getElementById('tos-check-label');
+  const btn=document.getElementById('tos-accept');
+  const hint=document.getElementById('tos-scroll-hint');
+  const unlock=()=>{
+    if(box.scrollTop+box.clientHeight>=box.scrollHeight-8){
+      chk.disabled=false; lbl.classList.remove('tos-disabled'); hint.classList.add('done');
+    }
+  };
+  box.addEventListener('scroll',unlock,{passive:true});
+  window.addEventListener('resize',unlock);
+  chk.addEventListener('change',()=>{ btn.disabled=!chk.checked; });
+  setTimeout(unlock,50);
+}
+function acceptTos(){
+  const chk=document.getElementById('tos-check');
+  if(!chk||!chk.checked) return;
+  try{ localStorage.setItem('chess-tos-accepted',TOS_VERSION); }catch(e){}
+  document.getElementById('tos-screen').classList.add('hidden');
+}
+initTos();
 </script>
 
 </body>
