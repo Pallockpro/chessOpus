@@ -2644,14 +2644,15 @@ h1 .h1-mark{ -webkit-text-fill-color:var(--gold); opacity:1; font-size:1.15em; f
 /* desktop game layout: board left, panel right */
 @media(min-width:980px){
   #game{ max-width:1160px; display:grid; grid-template-columns:minmax(0,1fr) 360px;
-    grid-template-areas:"board status" "board info" "board timers" "board log" "board btns" "board chat";
-    grid-template-rows:auto auto auto auto auto 1fr; column-gap:22px; row-gap:10px; align-items:start; }
+    grid-template-areas:"board status" "board info" "board timers" "board log" "board btns" "board admin" "board chat";
+    grid-template-rows:auto auto auto auto auto auto 1fr; column-gap:22px; row-gap:10px; align-items:start; }
   #status-bar{ grid-area:status; }
   #game-info{ grid-area:info; }
   #timers{ grid-area:timers; }
   #board-wrap{ grid-area:board; width:min(100%,calc(100vh - 110px)); max-width:720px; justify-self:center; }
   #move-log{ grid-area:log; max-height:180px; min-height:90px; }
   #game-btns{ grid-area:btns; }
+  #admin-tools{ grid-area:admin; }
   #game-chat{ grid-area:chat; align-self:stretch; min-height:220px; }
   #game-chat #game-messages{ flex:1; height:auto; min-height:120px; }
   body:has(#game:not(.hidden)) h1{ font-size:1.3rem; }
@@ -2755,6 +2756,95 @@ h1 .h1-mark{ -webkit-text-fill-color:var(--gold); opacity:1; font-size:1.15em; f
 }
 html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !important}
 @media (prefers-reduced-motion:reduce){.chili-ember{display:none}}
+
+/* ---------- CHILI STRIKE (admin) ---------- */
+#admin-tools{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+#admin-tools button{min-width:220px}
+#chili-strike-btn{border-color:rgba(255,90,20,.55);color:#ff8a3c}
+#chili-strike-btn:hover{background:rgba(255,74,18,.15)}
+#chili-strike-btn.armed{color:#fff;border-color:#ff4a12;background:linear-gradient(180deg,#ff6a1a,#c4120a);
+  box-shadow:0 0 16px rgba(255,74,18,.55);animation:chiliArmed 1.2s ease-in-out infinite}
+@keyframes chiliArmed{50%{box-shadow:0 0 26px rgba(255,120,30,.85)}}
+#board.chili-armed .sq{cursor:crosshair}
+#board.chili-armed .sq:has(.piece-wrap):hover::before{background:radial-gradient(circle,transparent 38%,rgba(255,74,18,.35) 40%,transparent 42%,transparent 58%,rgba(255,74,18,.5) 60%,transparent 63%);
+  outline:2px dashed rgba(255,90,20,.8);outline-offset:-4px}
+.sq.chili-target{z-index:3;box-shadow:inset 0 0 0 3px #ff4a12,0 0 18px #ff4a12 !important;animation:chiliTarget .45s ease-in-out infinite alternate}
+@keyframes chiliTarget{to{box-shadow:inset 0 0 0 5px #ffd23a,0 0 30px #ff4a12}}
+.sq.chili-scorched::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,rgba(20,8,0,.75) 0%,rgba(60,20,0,.55) 30%,rgba(120,40,0,.25) 55%,transparent 72%)}
+
+#board-wrap{transition:scale .8s cubic-bezier(.65,0,.35,1)}
+#board-wrap.cine-zoom{position:relative;z-index:6000;scale:1.35}
+.cine-shake{animation:cineShake .45s linear}
+@keyframes cineShake{
+  10%{translate:-10px 6px}20%{translate:9px -8px}30%{translate:-8px -5px}40%{translate:7px 8px}
+  55%{translate:-5px 3px}70%{translate:4px -3px}85%{translate:-2px 2px}100%{translate:0 0}}
+
+#chili-cine{position:fixed;inset:0;z-index:5999;pointer-events:all}
+#chili-bars{position:fixed;inset:0;z-index:6003;pointer-events:none}
+#chili-cine .cine-vignette{position:absolute;inset:0;opacity:0;transition:opacity .6s;
+  background:radial-gradient(ellipse at center,rgba(40,0,0,.15) 0%,rgba(10,0,0,.75) 65%,rgba(0,0,0,.92) 100%)}
+#chili-cine.show .cine-vignette{opacity:1}
+.cine-bar{position:absolute;left:0;right:0;height:13vh;background:#000;display:flex;align-items:center;justify-content:center;
+  transition:transform .6s cubic-bezier(.65,0,.35,1);z-index:6003;padding:0 16px}
+.cine-bar.top{top:0;transform:translateY(-100%);align-items:flex-end;padding-bottom:1.6vh}
+.cine-bar.bottom{bottom:0;transform:translateY(100%);align-items:flex-start;padding-top:1.6vh}
+#chili-bars.show .cine-bar{transform:none}
+.cine-title{font-family:'Cinzel',serif;font-weight:900;letter-spacing:.35em;font-size:clamp(.9rem,3vw,1.6rem);
+  background:linear-gradient(90deg,#ffd23a,#ff6a1a,#e3170a,#ff6a1a,#ffd23a);background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:skinFlow 2s linear infinite;filter:drop-shadow(0 0 10px rgba(255,74,18,.6));text-align:center}
+.cine-caption{font-family:'Crimson Pro',serif;font-style:italic;color:#f3e3d0;font-size:clamp(.85rem,2.4vw,1.15rem);text-align:center;letter-spacing:.03em}
+.cine-caption strong{color:#ff7a2a;font-style:normal;text-transform:uppercase;letter-spacing:.12em}
+#chili-cine.hide .cine-vignette{opacity:0}
+.cine-flash{position:fixed;inset:0;background:radial-gradient(circle,#fff 0%,#ffe08a 35%,rgba(255,120,30,.6) 70%,transparent 100%);
+  z-index:6002;animation:cineFlash .55s ease-out forwards;pointer-events:none}
+@keyframes cineFlash{0%{opacity:0}8%{opacity:1}100%{opacity:0}}
+
+#chili-fx{position:fixed;inset:0;z-index:6002;pointer-events:none;overflow:hidden}
+.cine-chili{position:fixed;transform:translate(-50%,-50%);animation:cineChiliFly .65s cubic-bezier(.55,0,.9,.4) forwards;
+  filter:drop-shadow(0 0 12px rgba(255,90,20,.9))}
+.cine-chili svg{width:100%;height:100%;display:block}
+@keyframes cineChiliFly{
+  from{transform:translate(calc(-50% + var(--fx)),calc(-50% + var(--fy))) rotate(-540deg) scale(.6)}
+  to{transform:translate(-50%,-50%) rotate(0) scale(1.1)}}
+.cine-boom{position:fixed;width:0;height:0}
+.cine-boom>*{position:absolute;left:0;top:0;transform:translate(-50%,-50%);border-radius:50%}
+.boom-core{width:var(--s);height:var(--s);
+  background:radial-gradient(circle,#fff 0%,#fff3b0 18%,#ffd23a 32%,#ff7a1a 52%,#e3170a 70%,rgba(120,10,0,0) 74%);
+  animation:boomCore 1s ease-out forwards}
+@keyframes boomCore{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}35%{transform:translate(-50%,-50%) scale(3.2);opacity:1}100%{transform:translate(-50%,-50%) scale(4.2);opacity:0}}
+.boom-ring{width:var(--s);height:var(--s);border:4px solid rgba(255,220,140,.9);box-shadow:0 0 30px rgba(255,120,30,.8);
+  animation:boomRing .8s ease-out forwards}
+.boom-ring.r2{border-color:rgba(255,90,20,.7);animation-delay:.12s;animation-duration:1s;opacity:0}
+@keyframes boomRing{0%{transform:translate(-50%,-50%) scale(.3);opacity:1}100%{transform:translate(-50%,-50%) scale(6);opacity:0;border-width:1px}}
+.boom-text{border-radius:0;white-space:nowrap;font-family:'Cinzel',serif;font-weight:900;color:#fff;
+  font-size:calc(var(--s)*.55);letter-spacing:.05em;
+  text-shadow:0 0 8px #ff4a12,0 0 20px #e3170a,3px 3px 0 #7a0a03;
+  animation:boomText 1.6s cubic-bezier(.34,1.56,.64,1) forwards}
+.cine-boom.low .boom-text{animation-name:boomTextLow}
+@keyframes boomTextLow{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:0}
+  18%{transform:translate(-50%,60%) scale(1.25) rotate(-6deg);opacity:1}
+  70%{transform:translate(-50%,70%) scale(1.1) rotate(-6deg);opacity:1}
+  100%{transform:translate(-50%,100%) scale(1.1) rotate(-6deg);opacity:0}}
+@keyframes boomText{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:0}
+  18%{transform:translate(-50%,-160%) scale(1.25) rotate(-6deg);opacity:1}
+  70%{transform:translate(-50%,-170%) scale(1.1) rotate(-6deg);opacity:1}
+  100%{transform:translate(-50%,-200%) scale(1.1) rotate(-6deg);opacity:0}}
+.cine-shard{position:fixed;transform:translate(-50%,-50%);object-fit:contain;
+  filter:drop-shadow(0 0 6px #ff4a12) brightness(1.1);animation:shardFly 1.3s cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes shardFly{0%{transform:translate(-50%,-50%) rotate(0);opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 120px)) rotate(var(--rot)) scale(.6);opacity:0}}
+.cine-spark{position:fixed;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,#fff 0%,#ffd23a 40%,#ff5a12 75%,transparent 80%);box-shadow:0 0 8px #ff7a1a;
+  animation:sparkFly .9s ease-out forwards}
+@keyframes sparkFly{0%{transform:translate(-50%,-50%) scale(1.4);opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2);opacity:0}}
+.cine-smoke{position:fixed;border-radius:50%;transform:translate(-50%,-50%) scale(.3);opacity:0;
+  background:radial-gradient(circle,rgba(70,60,55,.75) 0%,rgba(40,35,32,.45) 45%,transparent 70%);
+  animation:smokeRise 1.8s ease-out forwards}
+@keyframes smokeRise{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}25%{opacity:.9}
+  100%{opacity:0;transform:translate(-50%,-150%) scale(1.8)}}
 </style>
 </head>
 
@@ -3061,8 +3151,12 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
     <button class="ghost" onclick="emailInvite()">✉ Email</button>
     <button class="ghost" onclick="offerDraw()">½ Draw</button>
     <button class="ghost" onclick="resignGame()">Resign</button>
-    <button class="ghost" id="admin-bypass-btn" onclick="toggleAdminBypass()" style="display:none;">Admin Bypass: Off</button>
     <button class="ghost" onclick="leaveGame()">Leave</button>
+  </div>
+
+  <div id="admin-tools" style="display:none;">
+    <button class="ghost" id="admin-bypass-btn" onclick="toggleAdminBypass()" style="display:none;">Admin Bypass: Off</button>
+    <button class="ghost" id="chili-strike-btn" onclick="toggleChiliStrike()" style="display:none;" title="Click any piece to blow it up">🌶 Chili Strike: Off</button>
   </div>
 
   <div id="game-chat" class="chat-panel">
@@ -5874,6 +5968,8 @@ async function pollMoves(){
         handleDrawOffer();
       }else if(md&&md.resign){
         handleRemoteEnd(md.winner,md.reason);
+      }else if(md&&md.explode){
+        applyChiliExplosion(md.r,md.c,false);
       }else if(md){
         const remoteColor=myColor==='w'?'b':'w';
         if(md.color&&md.color!==remoteColor) return;
@@ -6524,6 +6620,7 @@ function refreshAdminBypassBtn(){
   if(!allowed) adminBypassOn=false;
   btn.textContent='Admin Bypass: '+(adminBypassOn?'On':'Off');
   btn.style.background=adminBypassOn?'var(--gold-dim)':'';
+  refreshChiliStrikeBtn();
 }
 
 function toggleAdminBypass(){
@@ -6651,7 +6748,12 @@ function executeMove(move,local){
 
 function handleSquareClick(r,c){
   if(gameEnded||G.status==='checkmate'||G.status==='stalemate'||G.status==='ended') return;
+  if(chiliFxBusy) return;
   if(G.turn!==myColor) return;
+  if(chiliStrikeActive()){
+    if(G.board[r][c]) chiliStrike(r,c);
+    return;
+  }
 
   const p=G.board[r][c];
 
@@ -6727,6 +6829,7 @@ function showPromoModal(){
 function renderBoard(){
   const boardEl=document.getElementById('board');
   boardEl.innerHTML='';
+  boardEl.classList.toggle('chili-armed',chiliStrikeActive());
 
   const flip=myColor==='b';
   const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
@@ -6783,6 +6886,7 @@ function renderBoard(){
       boardEl.appendChild(sq);
     }
   }
+  _applyChiliScorch();
 }
 
 
@@ -7099,6 +7203,254 @@ function acceptTos(){
   document.getElementById('tos-screen').classList.add('hidden');
 }
 initTos();
+
+/* ============================================================
+   CHILI STRIKE (admin only, requires the Chili skin equipped)
+   Click any non-king piece on your turn to blow it up, with a cutscene
+   that plays for both players.
+============================================================ */
+let chiliStrikeOn=false;
+let chiliFxBusy=false;
+const PIECE_NAMES={p:'Pawn',n:'Knight',b:'Bishop',r:'Rook',q:'Queen',k:'King'};
+
+function chiliStrikeAllowed(){
+  return isSpecialUser() && getMyEquippedSkin()==='chili';
+}
+function chiliStrikeActive(){
+  return chiliStrikeOn && chiliStrikeAllowed();
+}
+function refreshChiliStrikeBtn(){
+  const btn=document.getElementById('chili-strike-btn');
+  const tools=document.getElementById('admin-tools');
+  const admin=isSpecialUser();
+  const allowed=chiliStrikeAllowed();
+  if(!allowed) chiliStrikeOn=false;
+  if(tools) tools.style.display=admin?'':'none';
+  if(!btn) return;
+  btn.style.display=allowed?'':'none';
+  btn.textContent='🌶 Chili Strike: '+(chiliStrikeOn?'Armed':'Off');
+  btn.classList.toggle('armed',chiliStrikeOn);
+}
+function toggleChiliStrike(){
+  if(!chiliStrikeAllowed()) return;
+  chiliStrikeOn=!chiliStrikeOn;
+  if(chiliStrikeOn && adminBypassOn){ adminBypassOn=false; }
+  selected=null; legalNow=[];
+  refreshAdminBypassBtn();
+  renderBoard();
+  if(chiliStrikeOn) showToast('🌶 Chili Strike armed — click a piece',2200);
+}
+
+function chiliStrike(r,c){
+  if(!chiliStrikeActive()||chiliFxBusy||gameEnded) return;
+  const p=G.board[r][c];
+  if(!p) return;
+  if(p.toLowerCase()==='k'){ showToast('Kings are immune to chili 🌶',2200); return; }
+  applyChiliExplosion(r,c,true);
+}
+
+function applyChiliExplosion(r,c,local){
+  if(gameEnded) return;
+  const p=G.board[r]?.[c];
+  if(!p||p.toLowerCase()==='k') return;
+
+  // capture what the square looks like before the state changes
+  const sqEl=document.querySelector(`#board .sq[data-r="${r}"][data-c="${c}"]`);
+  const pieceSrc=pieceUrl(p);
+
+  // --- update game state
+  G.board[r][c]=null;
+  if(p==='R'&&r===7&&c===0) G.castling.wQR=false;
+  if(p==='R'&&r===7&&c===7) G.castling.wKR=false;
+  if(p==='r'&&r===0&&c===0) G.castling.bQR=false;
+  if(p==='r'&&r===0&&c===7) G.castling.bKR=false;
+  if(p.toLowerCase()==='p') G.enPassant=null;
+  G.halfClock=0;
+  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
+  G.status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
+  selected=null; legalNow=[];
+
+  if(local){
+    sendMoveData({explode:true,r,c,piece:p,color:myColor}).catch(()=>{});
+  }
+
+  const finish=()=>{
+    renderBoard(); updateUI(); renderTimers();
+    const s=G.status;
+    const ends={checkmate:[opp(G.turn),'Checkmate'],stalemate:['draw','Stalemate'],insufficient:['draw','Draw — insufficient material']};
+    if(ends[s]){
+      if(local) broadcastEnd(ends[s][0],ends[s][1]);
+      triggerGameEnd(s,ends[s][0],ends[s][1]);
+    }
+  };
+  playChiliCutscene(r,c,p,pieceSrc,sqEl,local).then(finish,finish);
+}
+
+/* ---------- sound ---------- */
+function _chiliBoomSound(){
+  if(!_moveSoundsOn) return;
+  try{
+    if(!_sfxCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; _sfxCtx=new AC(); }
+    const ctx=_sfxCtx; if(ctx.state==='suspended') ctx.resume();
+    const t=ctx.currentTime;
+    const len=Math.floor(ctx.sampleRate*1.6);
+    const buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2);
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(2400,t); lp.frequency.exponentialRampToValueAtTime(120,t+1.4);
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+1.6);
+    src.connect(lp).connect(g).connect(ctx.destination); src.start(t);
+    const o=ctx.createOscillator(), og=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(32,t+0.9);
+    og.gain.setValueAtTime(0.8,t); og.gain.exponentialRampToValueAtTime(0.001,t+1);
+    o.connect(og).connect(ctx.destination); o.start(t); o.stop(t+1.05);
+  }catch(e){}
+}
+function _chiliWhooshSound(){
+  if(!_moveSoundsOn) return;
+  try{
+    if(!_sfxCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; _sfxCtx=new AC(); }
+    const ctx=_sfxCtx; if(ctx.state==='suspended') ctx.resume();
+    const t=ctx.currentTime, len=Math.floor(ctx.sampleRate*0.7);
+    const buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1);
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=3;
+    bp.frequency.setValueAtTime(300,t); bp.frequency.exponentialRampToValueAtTime(2600,t+0.65);
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.5); g.gain.exponentialRampToValueAtTime(0.001,t+0.7);
+    src.connect(bp).connect(g).connect(ctx.destination); src.start(t);
+  }catch(e){}
+}
+
+/* ---------- cinematic ---------- */
+const _sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function playChiliCutscene(r,c,p,pieceSrc,sqEl,local){
+  chiliFxBusy=true;
+  const wrap=document.getElementById('board-wrap');
+  const colorWord=colorOf(p)==='w'?'White':'Black';
+  const sqName=FILES_STR[c]+(8-r);
+  const who=local?'You':escapeHtml(colorName(myColor==='w'?'b':'w'));
+  try{
+    // overlay + letterbox
+    const ov=document.createElement('div');
+    ov.id='chili-cine';
+    ov.innerHTML='<div class="cine-vignette"></div>';
+    const bars=document.createElement('div');
+    bars.id='chili-bars';
+    bars.innerHTML=
+      '<div class="cine-bar top"><div class="cine-title">🌶 CHILI STRIKE 🌶</div></div>'+
+      '<div class="cine-bar bottom"><div class="cine-caption">'+who+' targeted the '+colorWord+' '+PIECE_NAMES[p.toLowerCase()]+' on '+sqName+'</div></div>';
+    document.body.appendChild(ov);
+    document.body.appendChild(bars);
+    const fx=document.createElement('div');
+    fx.id='chili-fx';
+    document.body.appendChild(fx);
+
+    // zoom the board toward the target square
+    const sq=sqEl||document.querySelector(`#board .sq[data-r="${r}"][data-c="${c}"]`);
+    const wr=wrap.getBoundingClientRect();
+    let ox=50, oy=50;
+    if(sq){
+      const sr=sq.getBoundingClientRect();
+      ox=((sr.left+sr.width/2-wr.left)/wr.width)*100;
+      oy=((sr.top+sr.height/2-wr.top)/wr.height)*100;
+      sq.classList.add('chili-target');
+    }
+    wrap.style.transformOrigin=ox+'% '+oy+'%';
+    wrap.classList.add('cine-zoom');
+    requestAnimationFrame(()=>{ ov.classList.add('show'); bars.classList.add('show'); });
+    await _sleep(900);
+
+    // chili flies in
+    const tr=sq?sq.getBoundingClientRect():wr;
+    const tx=tr.left+tr.width/2, ty=tr.top+tr.height/2, size=tr.width;
+    const chili=document.createElement('div');
+    chili.className='cine-chili';
+    chili.innerHTML=CHILI_PEPPER_SVG;
+    chili.style.width=chili.style.height=Math.max(40,size*0.9)+'px';
+    chili.style.left=tx+'px'; chili.style.top=ty+'px';
+    const fromX=(tx<window.innerWidth/2?1:-1)*Math.max(window.innerWidth*0.6,300);
+    chili.style.setProperty('--fx',fromX+'px');
+    chili.style.setProperty('--fy',(-window.innerHeight*0.7)+'px');
+    fx.appendChild(chili);
+    _chiliWhooshSound();
+    await _sleep(650);
+    chili.remove();
+
+    // IMPACT
+    _chiliBoomSound();
+    const flash=document.createElement('div'); flash.className='cine-flash'; fx.appendChild(flash);
+    wrap.classList.add('cine-shake'); ov.classList.add('cine-shake');
+    const boom=document.createElement('div');
+    boom.className='cine-boom'+(ty<window.innerHeight*0.32?' low':'');
+    boom.style.left=tx+'px'; boom.style.top=ty+'px';
+    boom.style.setProperty('--s',size+'px');
+    boom.innerHTML='<div class="boom-core"></div><div class="boom-ring"></div><div class="boom-ring r2"></div><div class="boom-text">BOOM!</div>';
+    fx.appendChild(boom);
+    // piece shards flying apart
+    const quads=['polygon(0 0,55% 0,45% 50%,0 60%)','polygon(55% 0,100% 0,100% 45%,45% 50%)','polygon(0 60%,45% 50%,50% 100%,0 100%)','polygon(45% 50%,100% 45%,100% 100%,50% 100%)'];
+    quads.forEach((cp,i)=>{
+      const sh=document.createElement('img');
+      sh.className='cine-shard'; sh.src=pieceSrc; sh.alt='';
+      sh.style.clipPath=cp; sh.style.webkitClipPath=cp;
+      sh.style.width=sh.style.height=(size*0.86)+'px';
+      sh.style.left=tx+'px'; sh.style.top=ty+'px';
+      const ang=[-135,-45,135,45][i]*Math.PI/180, dist=size*(2.2+Math.random());
+      sh.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+      sh.style.setProperty('--dy',(Math.sin(ang)*dist-size*0.6)+'px');
+      sh.style.setProperty('--rot',((i%2?1:-1)*(200+Math.random()*300))+'deg');
+      fx.appendChild(sh);
+    });
+    // sparks + smoke
+    for(let i=0;i<26;i++){
+      const e=document.createElement('span');
+      e.className='cine-spark';
+      const ang=Math.random()*Math.PI*2, dist=size*(0.8+Math.random()*2.4);
+      e.style.left=tx+'px'; e.style.top=ty+'px';
+      e.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+      e.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+      e.style.animationDelay=(Math.random()*0.12).toFixed(2)+'s';
+      fx.appendChild(e);
+    }
+    for(let i=0;i<7;i++){
+      const sm=document.createElement('span');
+      sm.className='cine-smoke';
+      sm.style.left=(tx+(Math.random()-.5)*size)+'px'; sm.style.top=(ty+(Math.random()-.5)*size*0.5)+'px';
+      sm.style.width=sm.style.height=(size*(0.7+Math.random()*0.7))+'px';
+      sm.style.animationDelay=(0.15+Math.random()*0.35).toFixed(2)+'s';
+      fx.appendChild(sm);
+    }
+    // the piece disappears at impact
+    if(sq){
+      sq.querySelectorAll('.piece-wrap').forEach(n=>n.remove());
+      sq.classList.add('chili-scorched');
+    }
+    await _sleep(450);
+    wrap.classList.remove('cine-shake'); ov.classList.remove('cine-shake');
+    bars.querySelector('.cine-caption').innerHTML='💥 The '+colorWord+' '+PIECE_NAMES[p.toLowerCase()]+' was <strong>obliterated</strong>';
+    await _sleep(1500);
+
+    // wrap up
+    ov.classList.remove('show'); ov.classList.add('hide'); bars.classList.remove('show');
+    wrap.classList.remove('cine-zoom');
+    await _sleep(550);
+    ov.remove(); bars.remove(); fx.remove();
+    wrap.style.transformOrigin='';
+    // leave a scorch mark on the square for a few seconds after the redraw
+    _chiliScorch={r,c,until:Date.now()+6000};
+  }finally{
+    chiliFxBusy=false;
+  }
+}
+
+let _chiliScorch=null;
+function _applyChiliScorch(){
+  if(!_chiliScorch) return;
+  if(Date.now()>_chiliScorch.until){ _chiliScorch=null; return; }
+  const sq=document.querySelector(`#board .sq[data-r="${_chiliScorch.r}"][data-c="${_chiliScorch.c}"]`);
+  if(sq) sq.classList.add('chili-scorched');
+}
 </script>
 
 </body>
