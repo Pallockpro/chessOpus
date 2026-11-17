@@ -2845,6 +2845,22 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
   animation:smokeRise 1.8s ease-out forwards}
 @keyframes smokeRise{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}25%{opacity:.9}
   100%{opacity:0;transform:translate(-50%,-150%) scale(1.8)}}
+
+/* ---------- MOVE ANIMATION (hand) ---------- */
+#move-fx{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
+.mfx-rig,.mfx-piece{position:fixed;will-change:transform}
+.mfx-piece{display:flex;align-items:center;justify-content:center}
+.mfx-piece-in{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;will-change:transform;z-index:2}
+.mfx-piece .piece-wrap,.mfx-piece-in .piece-wrap{width:88%;height:88%}
+.mfx-shadow{position:absolute;left:50%;top:78%;width:62%;height:20%;border-radius:50%;z-index:1;
+  background:radial-gradient(ellipse,rgba(0,0,0,.55) 0%,rgba(0,0,0,.25) 45%,transparent 72%);filter:blur(1.5px)}
+.mfx-hand{position:absolute;z-index:3;pointer-events:none}
+.mfx-hand-in{width:100%;height:100%;will-change:transform,opacity;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35)) drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.mfx-hand-in svg{width:100%;height:100%;display:block;overflow:visible}
+.mfx-focus{position:fixed;border-radius:10px;opacity:0;
+  background:radial-gradient(circle at var(--fx) var(--fy),transparent 0,transparent 16%,rgba(0,0,0,.10) 34%,rgba(0,0,0,.30) 80%)}
+.mfx-ripple{position:fixed;border-radius:50%;border:2px solid color-mix(in srgb,var(--gold-light) 85%,#fff);
+  box-shadow:0 0 12px color-mix(in srgb,var(--gold) 60%,transparent),inset 0 0 8px color-mix(in srgb,var(--gold) 40%,transparent)}
 </style>
 </head>
 
@@ -3079,6 +3095,13 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
       <input id="move-sound-toggle" type="checkbox" onchange="setMoveSounds(this.checked)">
       <span class="st-track" aria-hidden="true"><span class="st-thumb"></span></span>
       <span>Play move &amp; capture sounds</span>
+    </label>
+
+    <div class="settings-label">Animation</div>
+    <label class="settings-toggle">
+      <input id="move-anim-toggle" type="checkbox" onchange="setMoveAnim(this.checked)">
+      <span class="st-track" aria-hidden="true"><span class="st-thumb"></span></span>
+      <span>Animated hand moves</span>
     </label>
 
     <div class="settings-label">Account</div>
@@ -3944,6 +3967,8 @@ function openSettings(){
   closeAccountMenu();
   const mst=document.getElementById('move-sound-toggle');
   if(mst) mst.checked=_moveSoundsOn;
+  const mat=document.getElementById('move-anim-toggle');
+  if(mat) mat.checked=_moveAnimOn;
   document.getElementById('settings-modal').classList.add('show');
 }
 
@@ -6681,6 +6706,7 @@ function executeMove(move,local){
   const isCapture=!!G.board[move.tr][move.tc]||move.isEnPassant;
   const isPawn=p.toLowerCase()==='p';
   const movedColor=G.turn;
+  const _anim=prepareMoveAnim(move,movedColor);
 
   const result=doMove(G.board,move,G.castling,G.enPassant);
 
@@ -6707,6 +6733,7 @@ function executeMove(move,local){
   else if(status==='check') G.log[G.log.length-1].note+='+';
 
   renderBoard();
+  runMoveAnim(_anim);
   updateUI();
   renderTimers();
 
@@ -6887,6 +6914,7 @@ function renderBoard(){
     }
   }
   _applyChiliScorch();
+  _applyMoveAnimHide();
 }
 
 
@@ -7005,6 +7033,11 @@ function playMoveSound(kind){
   }catch(e){}
 }
 function maybePlayMoveSound(){
+  if(_moveSoundDelay>0){
+    const d=_moveSoundDelay; _moveSoundDelay=0;
+    setTimeout(maybePlayMoveSound,d);
+    return;
+  }
   const n=G.log?G.log.length:0;
   const lm=G.lastMove;
   const sig=n+':'+(lm?`${lm.fr}${lm.fc}${lm.tr}${lm.tc}`:'');
@@ -7450,6 +7483,235 @@ function _applyChiliScorch(){
   if(Date.now()>_chiliScorch.until){ _chiliScorch=null; return; }
   const sq=document.querySelector(`#board .sq[data-r="${_chiliScorch.r}"][data-c="${_chiliScorch.c}"]`);
   if(sq) sq.classList.add('chili-scorched');
+}
+
+/* ============================================================
+   MOVE ANIMATION — a gloved hand picks the piece up and places it
+============================================================ */
+let _moveAnimOn=true;
+try{ _moveAnimOn=localStorage.getItem('chess-move-anim')!=='0'; }catch(e){}
+function setMoveAnim(on){
+  _moveAnimOn=!!on;
+  try{ localStorage.setItem('chess-move-anim',on?'1':'0'); }catch(e){}
+}
+let _moveSoundDelay=0;
+let _moveAnimHidden=[];      // squares whose real piece stays hidden until the hand puts it down
+let _moveAnimCleanup=null;
+
+const HAND_SVG='<svg viewBox="0 0 100 170" aria-hidden="true">'+
+ '<defs><linearGradient id="mhGlove" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f1f3f8"/><stop offset="1" stop-color="#d3d9e4"/></linearGradient>'+
+ '<linearGradient id="mhSleeve" x1="0" x2="1"><stop offset="0" stop-color="#151722"/><stop offset=".5" stop-color="#2b2f45"/><stop offset="1" stop-color="#11121b"/></linearGradient></defs>'+
+ '<path d="M23 130 L77 130 L84 170 L16 170 Z" fill="url(#mhSleeve)"/>'+
+ '<rect x="21" y="121" width="58" height="12" rx="3" fill="#f6f2e8" stroke="#d8d2c2" stroke-width="1"/>'+
+ '<circle cx="70" cy="127" r="2.8" fill="#d4af37" stroke="#8a6d1a" stroke-width=".8"/>'+
+ '<path d="M28 123 C23 105 25 87 33 75 L67 71 C75 81 77 101 73 123 Z" fill="url(#mhGlove)" stroke="#8f98ab" stroke-width="1.5"/>'+
+ '<path d="M54 76 C53 63 66 61 67 73" fill="url(#mhGlove)" stroke="#8f98ab" stroke-width="1.5"/>'+
+ '<path d="M61 80 C62 69 74 68 73 81" fill="url(#mhGlove)" stroke="#8f98ab" stroke-width="1.5"/>'+
+ '<path d="M67 89 C69 79 78 81 76 91" fill="url(#mhGlove)" stroke="#8f98ab" stroke-width="1.5"/>'+
+ '<path d="M40 79 C38 57 42 31 44 17 C45 9 53 9 53 17 C54 33 54 57 54 77 Z" fill="url(#mhGlove)" stroke="#8f98ab" stroke-width="1.5"/>'+
+ '<path d="M43 52 Q48 54 53 52 M42 36 Q47 38 52 36" stroke="#d3d8e2" stroke-width="1.1" fill="none"/>'+
+ '<path d="M36 112 Q50 116 66 110" stroke="#dde1ea" stroke-width="1.2" fill="none"/>'+
+ '<g class="mh-thumb" style="transform-box:view-box;transform-origin:32px 103px">'+
+   '<path d="M30 105 C22 87 28 57 38 31 C41 24 49 26 47 34 C44 57 42 81 40 101 Z" fill="url(#mhGlove)" stroke="#8f98ab" stroke-width="1.5"/>'+
+   '<path d="M36 60 Q40 62 44 60" stroke="#d3d8e2" stroke-width="1.1" fill="none"/>'+
+ '</g></svg>';
+
+function _sqEl(r,c){ return document.querySelector(`#board .sq[data-r="${r}"][data-c="${c}"]`); }
+function _cloneOf(sq){
+  const pw=sq&&sq.querySelector('.piece-wrap');
+  if(!pw) return null;
+  const cl=pw.cloneNode(true);
+  cl.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove());
+  return cl;
+}
+
+function prepareMoveAnim(move,color){
+  if(!_moveAnimOn) return null;
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  const boardEl=document.getElementById('board');
+  if(!boardEl||!boardEl.offsetParent) return null;   // board not on screen
+  const from=_sqEl(move.fr,move.fc), to=_sqEl(move.tr,move.tc);
+  if(!from||!to) return null;
+  const a={
+    color, move,
+    fromRect:from.getBoundingClientRect(),
+    toRect:to.getBoundingClientRect(),
+    piece:_cloneOf(from),
+    captured:_cloneOf(to),
+    capRect:null, rook:null
+  };
+  if(!a.piece) return null;
+  if(move.isEnPassant){
+    const cs=_sqEl(move.fr,move.tc);
+    a.captured=_cloneOf(cs); a.capRect=cs&&cs.getBoundingClientRect();
+  }
+  if(move.castleSide){
+    const rc=move.castleSide==='K'?[7,5]:[0,3];
+    const rf=_sqEl(move.tr,rc[0]), rt=_sqEl(move.tr,rc[1]);
+    if(rf&&rt) a.rook={el:_cloneOf(rf),from:rf.getBoundingClientRect(),to:rt.getBoundingClientRect(),r:move.tr,c:rc[1]};
+  }
+  return a;
+}
+
+function _applyMoveAnimHide(){
+  _moveAnimHidden.forEach(([r,c])=>{
+    const pw=_sqEl(r,c)?.querySelector('.piece-wrap');
+    if(pw) pw.style.visibility='hidden';
+  });
+}
+function _revealSquare(r,c){
+  _moveAnimHidden=_moveAnimHidden.filter(([a,b])=>!(a===r&&b===c));
+  const pw=_sqEl(r,c)?.querySelector('.piece-wrap');
+  if(pw) pw.style.visibility='';
+}
+
+function runMoveAnim(a){
+  if(_moveAnimCleanup) _moveAnimCleanup();      // finish any animation still running
+  if(!a) return;
+  const {move,fromRect:F,toRect:T}=a;
+  const W=F.width, H=F.height;
+  const dx=T.left-F.left, dy=T.top-F.top;
+  const dist=Math.hypot(dx,dy);
+  const mine=a.color===myColor;
+
+  // timings (ms)
+  const tIn=190, tPinch=90, tTravel=Math.round(Math.min(440,Math.max(240,dist*0.75))), tPlace=120, tOut=200;
+  const touchdown=tIn+tPinch+tTravel+tPlace;
+  _moveSoundDelay=touchdown;
+
+  let fx=document.getElementById('move-fx');
+  if(!fx){ fx=document.createElement('div'); fx.id='move-fx'; document.body.appendChild(fx); }
+
+  // hide the real pieces until they land
+  _moveAnimHidden=[[move.tr,move.tc]];
+  if(a.rook) _moveAnimHidden.push([a.rook.r,a.rook.c]);
+  _applyMoveAnimHide();
+
+  const made=[], anims=[];
+  const add=el=>{ fx.appendChild(el); made.push(el); return el; };
+  const anim=(el,kf,opt)=>{ const x=el.animate(kf,{fill:'both',...opt}); anims.push(x); return x; };
+
+  // cinematic focus: soft vignette over the board centred on the target
+  const bw=document.getElementById('board-wrap').getBoundingClientRect();
+  const focus=add(document.createElement('div'));
+  focus.className='mfx-focus';
+  Object.assign(focus.style,{left:bw.left+'px',top:bw.top+'px',width:bw.width+'px',height:bw.height+'px'});
+  focus.style.setProperty('--fx',((T.left+W/2-bw.left)/bw.width*100)+'%');
+  focus.style.setProperty('--fy',((T.top+H/2-bw.top)/bw.height*100)+'%');
+  anim(focus,[{opacity:0},{opacity:1,offset:.35},{opacity:1,offset:.75},{opacity:0}],{duration:touchdown+tOut,easing:'ease-in-out'});
+
+  // captured piece waits on its square, then gets knocked away
+  if(a.captured){
+    const R=a.capRect||T;
+    const cap=add(document.createElement('div'));
+    cap.className='mfx-piece';
+    Object.assign(cap.style,{left:R.left+'px',top:R.top+'px',width:R.width+'px',height:R.height+'px'});
+    cap.appendChild(a.captured);
+    const dir=dx>=0?1:-1;
+    anim(cap,[
+      {transform:'none',opacity:1,offset:0},
+      {transform:'none',opacity:1,offset:Math.max(0,(touchdown-tPlace-40)/(touchdown+260))},
+      {transform:`translate(${dir*W*0.35}px,${-H*0.25}px) rotate(${dir*28}deg) scale(.7)`,opacity:.6,offset:(touchdown+60)/(touchdown+260)},
+      {transform:`translate(${dir*W*0.6}px,${H*0.1}px) rotate(${dir*50}deg) scale(.45)`,opacity:0}
+    ],{duration:touchdown+260,easing:'cubic-bezier(.3,.6,.4,1)'});
+  }
+
+  // the rig carries shadow, piece and hand together
+  const rig=add(document.createElement('div'));
+  rig.className='mfx-rig';
+  Object.assign(rig.style,{left:F.left+'px',top:F.top+'px',width:W+'px',height:H+'px'});
+  const shadow=document.createElement('div'); shadow.className='mfx-shadow'; rig.appendChild(shadow);
+  const pc=document.createElement('div'); pc.className='mfx-piece-in'; pc.appendChild(a.piece); rig.appendChild(pc);
+
+  const hw=W*1.05, hh=hw*1.7;
+  const handOuter=document.createElement('div'); handOuter.className='mfx-hand';
+  Object.assign(handOuter.style,{width:hw+'px',height:hh+'px',left:(W*0.5-hw*0.46)+'px',top:(H*0.13-hh*0.1176)+'px',
+    transformOrigin:`${hw*0.46}px ${hh*0.1176}px`,transform:mine?'rotate(24deg)':'rotate(204deg)'});
+  const handIn=document.createElement('div'); handIn.className='mfx-hand-in'; handIn.innerHTML=HAND_SVG;
+  handOuter.appendChild(handIn); rig.appendChild(handOuter);
+  const thumb=handIn.querySelector('.mh-thumb');
+
+  // hand: reach in -> pinch -> carry -> let go -> pull back (one timeline each)
+  const D=touchdown+tOut;
+  anim(handIn,[
+    {transform:'translateY(85%)',opacity:0,offset:0,easing:'cubic-bezier(.2,.8,.3,1)'},
+    {transform:'translateY(5%)',opacity:1,offset:tIn*0.75/D},
+    {transform:'none',opacity:1,offset:tIn/D},
+    {transform:'none',opacity:1,offset:(touchdown+20)/D,easing:'cubic-bezier(.5,0,.75,0)'},
+    {transform:'translateY(90%)',opacity:0,offset:1}
+  ],{duration:D});
+  anim(thumb,[
+    {transform:'rotate(-24deg)',offset:0},
+    {transform:'rotate(-24deg)',offset:tIn/D,easing:'ease-out'},
+    {transform:'rotate(0deg)',offset:(tIn+tPinch)/D},
+    {transform:'rotate(0deg)',offset:touchdown/D,easing:'ease-out'},
+    {transform:'rotate(-20deg)',offset:(touchdown+tOut*0.55)/D},
+    {transform:'rotate(-20deg)',offset:1}
+  ],{duration:D});
+
+  // 3) lift + travel along a gentle arc, 4) set down with a little squash
+  const t0=tIn+tPinch, total=t0+tTravel+tPlace;
+  const o1=t0/total, o2=(t0+tTravel*0.5)/total, o3=(t0+tTravel)/total;
+  const arc=-Math.min(H*0.35,dist*0.12);
+  anim(rig,[
+    {transform:'translate(0,0)',offset:0},
+    {transform:'translate(0,0)',offset:o1,easing:'cubic-bezier(.45,0,.25,1)'},
+    {transform:`translate(${dx*0.5}px,${dy*0.5+arc}px)`,offset:o2,easing:'cubic-bezier(.45,0,.25,1)'},
+    {transform:`translate(${dx}px,${dy}px)`,offset:o3},
+    {transform:`translate(${dx}px,${dy}px)`}
+  ],{duration:total});
+  const tilt=Math.max(-8,Math.min(8,dx/Math.max(W,1)*2.5));
+  anim(pc,[
+    {transform:'none',offset:0},
+    {transform:'scale(.97)',offset:o1*0.92},
+    {transform:'translateY(-9%) scale(1.13)',offset:o1+(o2-o1)*0.35},
+    {transform:`translateY(-11%) scale(1.15) rotate(${tilt}deg)`,offset:o2},
+    {transform:'translateY(-7%) scale(1.1)',offset:o3},
+    {transform:'translateY(1%) scale(1.04,.94)',offset:o3+(1-o3)*0.6},
+    {transform:'none',offset:1}
+  ],{duration:total,easing:'ease-in-out'});
+  anim(shadow,[
+    {transform:'translate(-50%,-50%) scale(.85)',opacity:.35,offset:0},
+    {transform:'translate(-50%,-50%) scale(.85)',opacity:.35,offset:o1},
+    {transform:'translate(-50%,-30%) scale(1.15)',opacity:.22,offset:o2},
+    {transform:'translate(-50%,-38%) scale(1.05)',opacity:.28,offset:o3},
+    {transform:'translate(-50%,-50%) scale(.85)',opacity:.35}
+  ],{duration:total,easing:'ease-in-out'});
+  if(a.rook){
+    const rk=add(document.createElement('div'));
+    rk.className='mfx-piece'; rk.dataset.rook='1';
+    const RF=a.rook.from, RT=a.rook.to;
+    Object.assign(rk.style,{left:RF.left+'px',top:RF.top+'px',width:RF.width+'px',height:RF.height+'px'});
+    if(a.rook.el) rk.appendChild(a.rook.el);
+    anim(rk,[{transform:'none',offset:0},{transform:'none',offset:o1},
+      {transform:`translate(${RT.left-RF.left}px,${RT.top-RF.top}px)`,offset:o3,easing:'ease-out'},
+      {transform:`translate(${RT.left-RF.left}px,${RT.top-RF.top}px)`}],{duration:total,easing:'cubic-bezier(.45,0,.25,1)'});
+  }
+
+
+  const timers=[];
+  // landing ripple + reveal the real piece
+  timers.push(setTimeout(()=>{
+    const rp=add(document.createElement('div'));
+    rp.className='mfx-ripple';
+    Object.assign(rp.style,{left:(T.left+W/2)+'px',top:(T.top+H*0.62)+'px',width:W+'px',height:W*0.42+'px'});
+    anim(rp,[{transform:'translate(-50%,-50%) scale(.3)',opacity:.9},{transform:'translate(-50%,-50%) scale(1.25)',opacity:0}],{duration:420,easing:'cubic-bezier(.2,.7,.3,1)'});
+    _revealSquare(move.tr,move.tc);
+    if(a.rook) _revealSquare(a.rook.r,a.rook.c);
+    pc.style.visibility='hidden';
+    made.forEach(el=>{ if(el.dataset.rook) el.style.visibility='hidden'; });
+  },touchdown));
+
+  const done=()=>{
+    timers.forEach(clearTimeout);
+    anims.forEach(x=>{ try{ x.cancel(); }catch(e){} });
+    made.forEach(el=>el.remove());
+    const hid=_moveAnimHidden.slice(); _moveAnimHidden=[];
+    hid.forEach(([r,c])=>_revealSquare(r,c));
+    _moveAnimCleanup=null;
+  };
+  timers.push(setTimeout(done,Math.max(touchdown+tOut,touchdown+440)+30));
+  _moveAnimCleanup=done;
 }
 </script>
 
