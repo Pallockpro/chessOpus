@@ -2711,6 +2711,50 @@ h1 .h1-mark{ -webkit-text-fill-color:var(--gold); opacity:1; font-size:1.15em; f
 #tos-check{width:18px;height:18px;flex:none;margin-top:2px;padding:0;accent-color:var(--gold);cursor:inherit}
 #tos-accept{align-self:center;min-width:180px}
 @media(max-width:620px){#tos-card{padding:16px 14px}.tos-warning{font-size:.92rem}}
+
+/* ---------- CHILI SKIN (exclusive) ---------- */
+.piece-wrap.skin-chili{animation:chiliGlow 1.8s ease-in-out infinite}
+@keyframes chiliGlow{
+  0%,100%{filter:drop-shadow(0 0 2px #ffd23a) drop-shadow(0 0 7px #ff4a12)}
+  30%{filter:drop-shadow(0 0 3px #ffe27a) drop-shadow(0 0 12px #ff7a1a) drop-shadow(0 -4px 14px rgba(255,40,0,.7))}
+  55%{filter:drop-shadow(0 0 2px #ffb02e) drop-shadow(0 0 6px #e8160c)}
+  80%{filter:drop-shadow(0 0 4px #ffd23a) drop-shadow(0 0 14px #ff4a12) drop-shadow(0 -6px 18px rgba(255,90,0,.6))}
+}
+.chili-ember{position:absolute;bottom:30%;width:7%;aspect-ratio:1;border-radius:50%;pointer-events:none;z-index:2;opacity:0;
+  background:radial-gradient(circle,#fff6c2 0%,#ffcc33 35%,#ff5a12 70%,transparent 72%);
+  box-shadow:0 0 4px #ff7a1a;animation:chiliEmber 2.4s ease-out infinite}
+.chili-ember.alt{width:5%;animation-duration:2s}
+@keyframes chiliEmber{
+  0%{opacity:0;transform:translate(0,0) scale(.6)}
+  15%{opacity:1}
+  60%{opacity:.85;transform:translate(-25%,-260%) scale(1)}
+  100%{opacity:0;transform:translate(35%,-480%) scale(.3)}
+}
+.chili-bubble{position:absolute;left:50%;top:-6%;z-index:5;pointer-events:none;opacity:0;white-space:nowrap;
+  display:flex;align-items:center;gap:.25em;padding:.18em .5em .18em .3em;border-radius:.8em;
+  font-family:'Cinzel',serif;font-weight:900;letter-spacing:.06em;color:#fff;
+  font-size:9px;font-size:max(6px,12cqw);line-height:1.05;
+  background:linear-gradient(180deg,#ff6a1a 0%,#e3170a 60%,#a80d04 100%);
+  border:1px solid #ffb14a;
+  text-shadow:0 1px 1px rgba(80,0,0,.8);
+  box-shadow:0 0 6px rgba(255,90,0,.9),0 1px 3px rgba(0,0,0,.45);
+  transform:translateX(-50%) translateY(4px) scale(.8);
+  animation:chiliSay 5s cubic-bezier(.34,1.56,.64,1) infinite}
+.chili-bubble::after{content:'';position:absolute;left:50%;bottom:-.38em;margin-left:-.3em;
+  border-left:.3em solid transparent;border-right:.3em solid transparent;border-top:.42em solid #a80d04}
+.chili-bubble .chili-svg{width:1.35em;height:1.35em;flex:none;filter:drop-shadow(0 0 2px rgba(255,220,120,.8));
+  animation:chiliWiggle .6s ease-in-out infinite alternate}
+@keyframes chiliWiggle{from{transform:rotate(-14deg)}to{transform:rotate(10deg)}}
+@keyframes chiliSay{
+  0%{opacity:0;transform:translateX(-50%) translateY(4px) scale(.8)}
+  6%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  10%{transform:translateX(-50%) translateY(0) scale(1) rotate(-3deg)}
+  14%{transform:translateX(-50%) translateY(0) scale(1) rotate(3deg)}
+  18%,38%{opacity:1;transform:translateX(-50%) translateY(0) scale(1) rotate(0)}
+  44%,100%{opacity:0;transform:translateX(-50%) translateY(-3px) scale(.9)}
+}
+html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !important}
+@media (prefers-reduced-motion:reduce){.chili-ember{display:none}}
 </style>
 </head>
 
@@ -3202,6 +3246,7 @@ const RAINBOW_GRADIENT = 'linear-gradient(135deg,#ff3b3b 0%,#ff9f1c 17%,#ffe135 
 const RAINBOW_LOOP_GRADIENT = 'linear-gradient(90deg,#ff3b3b 0%,#ff7a1a 8%,#ffc21a 16%,#f4f23a 24%,#6fe34a 33%,#27e0a0 41%,#2ec4ff 50%,#4a8bff 58%,#6a5cff 66%,#b04dff 75%,#ff4de0 83%,#ff4d8d 92%,#ff3b3b 100%)';
 
 // first and last colour match so the animation loops with no jump
+const CHILI_LOOP_GRADIENT = 'linear-gradient(90deg,#b30000 0%,#e8160c 14%,#ff4a12 28%,#ff8a1c 40%,#ffd23a 47%,#ff8a1c 54%,#ff4a12 66%,#e8160c 80%,#b30000 100%)';
 const BLUE_LOOP_GRADIENT = 'linear-gradient(90deg,#0a2cff 0%,#1f6bff 14%,#2e9bff 28%,#7fe0ff 40%,#e6fbff 46%,#7fe0ff 52%,#2e9bff 64%,#1f6bff 78%,#0a2cff 100%)';
 
 const SKINS = [
@@ -3391,7 +3436,12 @@ const SKINS = [
     desc:'Exclusive · glowing animated blue',
     filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))',
     grad:BLUE_LOOP_GRADIENT, anim:true, glowBlue:true, text:'CHASE',
-    fallback:'sepia(1) hue-rotate(165deg) saturate(6) brightness(1.1) drop-shadow(0 0 6px rgba(46,155,255,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' }
+    fallback:'sepia(1) hue-rotate(165deg) saturate(6) brightness(1.1) drop-shadow(0 0 6px rgba(46,155,255,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'chili', name:'Chili', price:0, special:true,
+    desc:'Exclusive · blazing chili heat, rising embers',
+    filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))',
+    grad:CHILI_LOOP_GRADIENT, anim:true, chili:true,
+    fallback:'sepia(1) hue-rotate(-30deg) saturate(9) brightness(1.05) drop-shadow(0 0 6px rgba(255,80,0,.85)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' }
 ];
 
 function findSkin(id){
@@ -3840,6 +3890,12 @@ function skinPhaseDelay(){
 }
 
 // skinArg can be a skin object (preferred) or a plain CSS filter string
+const CHILI_PEPPER_SVG='<svg class="chili-svg" viewBox="0 0 40 40" aria-hidden="true">'+
+  '<path d="M9 13C3 22 8 34 34 37C27 32 21 25 19 15C17 10 11 10 9 13Z" fill="#e3170a" stroke="#7a0a03" stroke-width="1.4" stroke-linejoin="round"/>'+
+  '<path d="M12 17C11 24 15 30 24 33" stroke="rgba(255,255,255,.6)" stroke-width="1.8" fill="none" stroke-linecap="round"/>'+
+  '<path d="M8 13C9 9 15 8 19 12C15 11 11 12 8 13Z" fill="#3fae4a" stroke="#1f6b2a" stroke-width="1" stroke-linejoin="round"/>'+
+  '<path d="M13 10C13 6 15 4 19 3" stroke="#2f8a3a" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>';
+
 function makePieceEl(p,skinArg){
   const skin=(skinArg && typeof skinArg==='object') ? skinArg : null;
   const filter=skin ? skin.filter : skinArg;
@@ -3891,6 +3947,24 @@ function makePieceEl(p,skinArg){
     });
     w.classList.add('has-text');
     w.appendChild(t);
+  }
+  if(skin && skin.chili){
+    w.classList.add('skin-chili','has-text');
+    w.style.animationDelay='-'+((Date.now()%1800)/1000).toFixed(3)+'s';
+    // rising embers / heat sparks
+    const ph=(Date.now()%2400)/1000;
+    [[22,0],[50,0.8],[76,1.6],[36,1.2],[64,0.4]].forEach(([x,d],i)=>{
+      const e=document.createElement('span');
+      e.className='chili-ember'+(i%2?' alt':'');
+      e.style.left=x+'%';
+      e.style.animationDelay=(d-ph).toFixed(3)+'s';
+      w.appendChild(e);
+    });
+    const bub=document.createElement('div');
+    bub.className='chili-bubble';
+    bub.innerHTML=CHILI_PEPPER_SVG+'<span>CHILI</span>';
+    bub.style.animationDelay='-'+((Date.now()%5000)/1000).toFixed(3)+'s';
+    w.appendChild(bub);
   }
    if(skin && skin.angel){
     w.classList.add('skin-angel','has-text');
