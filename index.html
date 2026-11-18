@@ -3061,6 +3061,57 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 
 /* long toasts wrap instead of running off small screens */
 #toast{white-space:normal;max-width:calc(100vw - 32px);text-align:center;line-height:1.5}
+
+/* ---------- move time picker ---------- */
+.mt-label{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+#move-time-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px}
+.mt-opt{background:var(--surface2) !important;color:var(--text);border:1px solid var(--border);box-shadow:none !important;padding:9px 6px;font-size:.72rem;letter-spacing:1px}
+.mt-opt:hover{border-color:var(--gold)}
+.mt-opt.active{background:var(--gold-dim) !important;border-color:var(--gold);color:var(--gold-light)}
+
+/* ---------- ranks & titles ---------- */
+.title-badge{display:inline-block;font-family:'Cinzel',serif;font-weight:900;font-size:.62em;letter-spacing:.06em;line-height:1;
+  padding:.28em .45em;margin-right:.4em;border-radius:4px;vertical-align:.12em;color:#fff;background:#8a6d1a;text-shadow:0 1px 1px rgba(0,0,0,.4);-webkit-text-fill-color:#fff}
+.title-badge.t-nm{background:#4c6a8a}
+.title-badge.t-cm{background:#3f7d5a}
+.title-badge.t-fm{background:#2f6fb0}
+.title-badge.t-im{background:#7a3fb0}
+.title-badge.t-gm{background:linear-gradient(180deg,#e0b13a,#a8740f)}
+.title-badge.t-sgm{background:linear-gradient(180deg,#ff6a3d,#b3240f);box-shadow:0 0 8px rgba(255,90,40,.5)}
+.title-badge.t-wc{background:linear-gradient(90deg,#ffd35a,#ff6ad5,#6ad5ff,#ffd35a);background-size:200% 100%;animation:skinFlow 3s linear infinite;box-shadow:0 0 10px rgba(255,210,90,.6)}
+.t-rank{min-height:14px;line-height:1.1}
+.rank-line{font-size:.68rem;color:var(--muted);letter-spacing:.04em;font-style:italic}
+.rank-line.titled{color:var(--gold-light);font-style:normal}
+#rank-card{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px}
+#rank-card.hidden{display:none}
+.rc-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rc-name{font-family:'Cinzel',serif;color:var(--gold-light);font-size:1rem;letter-spacing:1px}
+.rc-xp{font-family:'Cinzel',serif;font-size:.75rem;color:var(--muted);letter-spacing:1px}
+.rc-bar{height:7px;border-radius:99px;background:var(--surface2);margin:8px 0 6px;overflow:hidden;border:1px solid var(--border)}
+.rc-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:99px;transition:width .6s ease}
+.rc-next{font-size:.82rem;color:var(--muted)}
+.rc-next strong{color:var(--text)}
+.rc-unlock{color:var(--gold)}
+.rc-guest{font-size:.88rem;color:var(--muted);text-align:center}
+.am-rank{font-size:.75rem;color:var(--gold-light);margin-top:2px}
+#result-xp{margin:6px 0 14px}
+.rx-total{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--gold-light);text-shadow:0 0 14px color-mix(in srgb,var(--gold) 50%,transparent);animation:popIn .4s ease}
+.rx-items{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.rx-items span{font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:3px 10px;color:var(--muted)}
+.rx-items b{color:var(--gold-light)}
+.rx-rank{font-size:.85rem;color:var(--text)}
+.rx-guest{font-size:.85rem;color:var(--muted)}
+.lb-sort{display:flex;gap:6px;justify-content:center;margin:-4px 0 12px}
+.lb-sort-btn{background:transparent !important;color:var(--muted);border:1px solid var(--border);box-shadow:none !important;padding:7px 14px;font-size:.68rem}
+.lb-sort-btn.active{background:var(--gold-dim) !important;color:var(--gold-light);border-color:var(--gold)}
+.lb-rankname{color:var(--gold-light)}
+.rankup-banner{position:fixed;left:0;right:0;top:32%;z-index:7050;pointer-events:none;text-align:center;padding:20px 16px;
+  background:linear-gradient(90deg,transparent,rgba(20,14,4,.94) 15%,rgba(20,14,4,.94) 85%,transparent);
+  border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);animation:annIn .6s cubic-bezier(.2,.8,.3,1) both}
+.rankup-banner.out{animation:annOut .6s ease-in forwards}
+.ru-label{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:4px;color:var(--gold);text-transform:uppercase}
+.ru-name{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(1.3rem,5vw,2.3rem);color:#fff;margin-top:4px}
+.ru-sub{font-size:.9rem;color:var(--gold-light);margin-top:4px}
 </style>
 </head>
 
@@ -3086,6 +3137,7 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
     <div class="am-info">
       <div id="am-name" class="am-name">Player</div>
       <div id="am-coins" class="am-coins">0 coins · 0 wins</div>
+      <div id="am-rank" class="am-rank"></div>
     </div>
   </div>
   <button class="am-item" onclick="openChangeName()">
@@ -3186,6 +3238,7 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 
 <div id="lobby">
   <div id="player-name-display"></div>
+  <div id="rank-card" class="hidden"></div>
 
   <div class="card lobby-card">
     <div class="card-icon" aria-hidden="true">♔</div>
@@ -3255,7 +3308,11 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 <div id="leaderboard-page" class="hidden">
   <div class="card">
     <h2>Leaderboard</h2>
-    <p>Top players ranked by total wins.</p>
+    <p id="lb-sub">Top players ranked by total wins.</p>
+    <div class="lb-sort" role="tablist">
+      <button type="button" class="lb-sort-btn active" data-sort="wins" onclick="setLeaderboardSort('wins')">🏆 Wins</button>
+      <button type="button" class="lb-sort-btn" data-sort="xp" onclick="setLeaderboardSort('xp')">⭐ Rank / XP</button>
+    </div>
     <div id="leaderboard-list">
       <div class="public-empty">Loading leaderboard…</div>
     </div>
@@ -3273,6 +3330,9 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
       <input id="spectators-toggle" type="checkbox" style="width:auto;padding:0;accent-color:var(--gold);cursor:pointer;">
       Allow spectators to watch this game
     </label>
+
+    <div class="mt-label">⏱ Time per move</div>
+    <div id="move-time-picker" role="radiogroup" aria-label="Time per move"></div>
 
     <div class="create-type-btns">
       <button onclick="createRoom('private')">Private Lobby</button>
@@ -3353,12 +3413,14 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
   <div id="timers">
     <div class="timer-box" id="timer-white">
       <div class="t-label" id="tl-white">Player 1</div>
+      <div class="t-rank" id="tr-white"></div>
       <div class="t-val" id="tv-white">0:30</div>
       <div class="t-captured" id="tc-white"></div>
     </div>
 
     <div class="timer-box" id="timer-black">
       <div class="t-label" id="tl-black">Player 2</div>
+      <div class="t-rank" id="tr-black"></div>
       <div class="t-val" id="tv-black">0:30</div>
       <div class="t-captured" id="tc-black"></div>
     </div>
@@ -3458,11 +3520,13 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
       <div id="spectate-timers">
         <div class="timer-box" id="spectate-timer-white">
           <div class="t-label" id="stl-white">Player 1</div>
+          <div class="t-rank" id="str-white"></div>
           <div class="t-val" id="spectate-tv-white">0:30</div>
         </div>
 
         <div class="timer-box" id="spectate-timer-black">
           <div class="t-label" id="stl-black">Player 2</div>
+          <div class="t-rank" id="str-black"></div>
           <div class="t-val" id="spectate-tv-black">0:30</div>
         </div>
       </div>
@@ -3515,6 +3579,7 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
     <span id="result-icon">🏆</span>
     <div id="result-title">Game Over</div>
     <div id="result-reason">—</div>
+    <div id="result-xp"></div>
     <button onclick="newGameButton()">New Game</button>
     <button class="ghost" onclick="document.getElementById('result-overlay').classList.remove('show')">Close</button>
     <div id="result-countdown"></div>
@@ -4770,7 +4835,42 @@ function toSAN(board,move,color,castling,enPassant){
 
 const FB='https://chest-188bb-default-rtdb.firebaseio.com';
 
-const MOVE_TIME=30;
+// seconds per move — chosen by the host when creating a room (stored as room.moveTime)
+let MOVE_TIME=30;
+const MOVE_TIME_OPTIONS=[15,30,45,60,120,300];
+function _validMoveTime(v){ v=Number(v); return MOVE_TIME_OPTIONS.includes(v)?v:30; }
+function fmtMoveTime(s){ s=_validMoveTime(s); return s<60?`${s}s`:`${s/60} min`; }
+
+// ---- chess ranks (XP thresholds) — see RANKS & XP section below ----
+const RANKS=[
+  {name:'Beginner',             xp:0},
+  {name:'Novice',               xp:100},
+  {name:'Class E',              xp:250},
+  {name:'Class D',              xp:500},
+  {name:'Class C',              xp:850},
+  {name:'Class B',              xp:1300},
+  {name:'Class A',              xp:1900},
+  {name:'Expert',               xp:2700},
+  {name:'National Master',      xp:3700,  title:'NM'},
+  {name:'Candidate Master',     xp:5000,  title:'CM'},
+  {name:'FIDE Master',          xp:6600,  title:'FM'},
+  {name:'International Master', xp:8600,  title:'IM'},
+  {name:'Grandmaster',          xp:11000, title:'GM'},
+  {name:'Super Grandmaster',    xp:15000, title:'SGM'},
+  {name:'World Champion',       xp:22000, title:'WC'}
+];
+// XP rules
+const XP_RULES={
+  win:40, draw:15, loss:5,
+  checkmate:20,        // won by checkmate
+  quickWin:15,         // won in 20 of your own moves or fewer
+  capture:2, captureCap:30,
+  check:1,  checkCap:10,
+  castle:5,            // once per game
+  promotion:8,
+  enPassant:12
+};
+
 const CODE_EXPIRE=300;
 const DISCONNECT_GRACE=20000;
 const GAME_START_GRACE=15000;
@@ -4861,8 +4961,13 @@ function setPlayerNames(w,b){
 
 function refreshPlayerLabels(){
   const setText=(id,t)=>{ const el=document.getElementById(id); if(el && el.textContent!==t) el.textContent=t; };
-  setText('tl-white', colorName('w') + (myColor==='w' ? ' (you)' : ''));
-  setText('tl-black', colorName('b') + (myColor==='b' ? ' (you)' : ''));
+  const setHtml=(id,h)=>{ const el=document.getElementById(id); if(el && el.dataset.sig!==h){ el.dataset.sig=h; el.innerHTML=h; } };
+  for(const c of ['w','b']){
+    const id=c==='w'?'white':'black';
+    const xp=roomXp?roomXp[c]:null;
+    setHtml('tl-'+id, titleBadgeHtml(xp)+escapeHtml(colorName(c))+(myColor===c?' (you)':''));
+    setHtml('tr-'+id, rankLineHtml(xp));
+  }
   if(myColor) setText('my-color', myName);
   if(typeof G!=='undefined' && G && G.turn) setText('turn-disp', colorName(G.turn));
 }
@@ -4969,6 +5074,7 @@ async function loadOrCreateProfile(user){
       name: finalName,
       coins: 10,
       wins: 0,
+      xp: 0,
       ownedSkins: { classic: true },
       equippedSkin: 'classic',
       photoURL: user.photoURL || '',
@@ -4981,6 +5087,7 @@ async function loadOrCreateProfile(user){
     let changed = false;
     if(typeof profile.coins !== 'number'){ profile.coins = 0; changed = true; }
     if(typeof profile.wins !== 'number'){ profile.wins = 0; changed = true; }
+    if(typeof profile.xp !== 'number'){ profile.xp = 0; changed = true; }
     if(!profile.ownedSkins || typeof profile.ownedSkins !== 'object'){
       profile.ownedSkins = { classic: true }; changed = true;
     }
@@ -5049,6 +5156,7 @@ function updatePlayerNameDisplay(){
   }
 
   el.innerHTML=html;
+  renderRankCard();
 }
 
 /* ---------- account button / menu ---------- */
@@ -5093,6 +5201,8 @@ function updateAccountButton(){
 
   if(amName) amName.textContent = myName;
   if(amCoins) amCoins.textContent = `${userProfile?.coins||0} coins · ${userProfile?.wins||0} wins`;
+  { const ar=document.getElementById('am-rank'); const xp=myXpOrNull();
+    if(ar) ar.innerHTML=xp===null?'':`${titleBadgeHtml(xp)}${escapeHtml(rankOf(xp).name)} · ${xp.toLocaleString()} XP`; }
 }
 
 function toggleAccountMenu(e){
@@ -5226,13 +5336,15 @@ async function loadLeaderboard(){
         uid,
         name: u.name || 'Player',
         wins: Number(u.wins) || 0,
+        xp: Number(u.xp) || 0,
         coins: Number(u.coins) || 0,
         photoURL: u.photoURL || ''
       });
     }
   }
 
-  arr.sort((a,b) => (b.wins - a.wins) || a.name.localeCompare(b.name));
+  if(_lbSort==='xp') arr.sort((a,b) => (b.xp - a.xp) || (b.wins - a.wins) || a.name.localeCompare(b.name));
+  else arr.sort((a,b) => (b.wins - a.wins) || (b.xp - a.xp) || a.name.localeCompare(b.name));
 
   const top = arr.slice(0, 50);
 
@@ -5270,7 +5382,7 @@ async function loadLeaderboard(){
     info.className = 'lb-info';
     const nameEl = document.createElement('div');
     nameEl.className = 'lb-name';
-    nameEl.textContent = u.name;
+    nameEl.innerHTML = titleBadgeHtml(u.xp) + escapeHtml(u.name);
     if(isMe){
       const tag = document.createElement('span');
       tag.className = 'lb-you-tag';
@@ -5279,12 +5391,14 @@ async function loadLeaderboard(){
     }
     const statsEl = document.createElement('div');
     statsEl.className = 'lb-stats';
-    statsEl.textContent = `${u.coins} coins`;
+    statsEl.innerHTML = `<span class="lb-rankname">${escapeHtml(rankOf(u.xp).name)}</span> · ${u.xp.toLocaleString()} XP · ${u.coins} coins`;
     info.append(nameEl, statsEl);
 
     const wins = document.createElement('div');
     wins.className = 'lb-wins';
-    wins.innerHTML = `${u.wins}<span class="lb-wins-label">WINS</span>`;
+    wins.innerHTML = _lbSort==='xp'
+      ? `${u.xp.toLocaleString()}<span class="lb-wins-label">XP</span>`
+      : `${u.wins}<span class="lb-wins-label">WINS</span>`;
 
     row.append(rankEl, avWrap, info, wins);
     list.appendChild(row);
@@ -5653,7 +5767,8 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
           text:m.text,
           created:Number(m.created)||0,
           senderId:(typeof m.senderId==='string')?m.senderId:'',
-          staff:(m.staff==='owner'||m.staff==='mod')?m.staff:''
+          staff:(m.staff==='owner'||m.staff==='mod')?m.staff:'',
+          title:RANKS.some(r=>r.title&&r.title===m.title)?m.title:''
         });
       }
     });
@@ -5662,7 +5777,7 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
   msgs.sort((a,b)=>(a.created-b.created)||String(a.key).localeCompare(String(b.key)));
   const shown=msgs.slice(-80);
 
-  const sig=shown.map(m=>`${m.key}\u0001${m.name}\u0001${m.text}\u0001${m.senderId}\u0001${m.staff}`).join('\u0002');
+  const sig=shown.map(m=>`${m.key}\u0001${m.name}\u0001${m.text}\u0001${m.senderId}\u0001${m.staff}\u0001${m.title}`).join('\u0002');
   if(sig===_chatSignatures[cacheKey]) return;
   _chatSignatures[cacheKey]=sig;
 
@@ -5692,7 +5807,13 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
 
     const nameEl=document.createElement('div');
     nameEl.className='chat-name';
-    nameEl.textContent=m.name;
+    if(m.title){
+      const tb=document.createElement('span');
+      tb.className='title-badge t-'+m.title.toLowerCase();
+      tb.textContent=m.title;
+      nameEl.appendChild(tb);
+    }
+    nameEl.appendChild(document.createTextNode(m.name));
 
     if(m.staff){
       const st=document.createElement('span');
@@ -5729,6 +5850,7 @@ async function pushChatMessage(code,inputEl){
   const clean=text.replace(/[<>]/g,'');
 
   const msg={ name:myName||'Player', text:clean, created, senderId:MY_ID };
+  { const t=rankOf(myXpOrNull()); if(t&&t.title) msg.title=t.title; }
   // staff only get a tag when they're spectating through the console
   if(staffSpectateRole&&code===spectatorRoomId) msg.staff=staffSpectateRole;
   await fbSet(`rooms/${code}/chat/${created}_${id}`,msg);
@@ -5802,7 +5924,24 @@ function showPage(page){
    ROOM CREATION
 ============================================================ */
 
-function openCreateType(){ document.getElementById('create-type-modal').classList.add('show'); }
+let _pickedMoveTime=30;
+try{ _pickedMoveTime=_validMoveTime(localStorage.getItem('chess-move-time')||30); }catch(e){}
+function renderMoveTimePicker(){
+  const box=document.getElementById('move-time-picker');
+  if(!box) return;
+  box.innerHTML='';
+  MOVE_TIME_OPTIONS.forEach(t=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='mt-opt'+(t===_pickedMoveTime?' active':'');
+    b.setAttribute('role','radio');
+    b.setAttribute('aria-checked',String(t===_pickedMoveTime));
+    b.textContent=fmtMoveTime(t);
+    b.onclick=()=>{ _pickedMoveTime=t; try{ localStorage.setItem('chess-move-time',String(t)); }catch(e){} renderMoveTimePicker(); };
+    box.appendChild(b);
+  });
+}
+function openCreateType(){ renderMoveTimePicker(); document.getElementById('create-type-modal').classList.add('show'); }
 function closeCreateType(){ document.getElementById('create-type-modal').classList.remove('show'); }
 
 function genCode(){
@@ -5877,8 +6016,10 @@ async function createRoom(type='private'){
 
   const now=Date.now();
   const mySkin=getMyEquippedSkin();
+  MOVE_TIME=_validMoveTime(_pickedMoveTime);
 
   const createdRoom={
+    moveTime:MOVE_TIME,
     white:MY_ID,
     whiteName:myName,
     black:null,
@@ -5930,6 +6071,7 @@ async function createRoom(type='private'){
       `${type==='public'?'Public':'Private'} Room Code:`+
       `<div class="code">${code}</div>`+
       `${type==='public'?'Visible in Public Lobbies.':'Share with your opponent.'}`+
+      `<br><small style="color:var(--gold)">⏱ ${fmtMoveTime(MOVE_TIME)} per move</small>`+
       `<br><small style="color:var(--muted)">Expires in ${m}:${String(s).padStart(2,'0')}</small>`
     );
   }
@@ -6029,7 +6171,7 @@ async function loadPublicRooms(){
     const info=document.createElement('div');
     info.innerHTML=
       `<div class="room-name">${escapeHtml(r.hostName||'Player')}'s Lobby</div>`+
-      `<div class="room-host">Open game • ${escapeHtml(r.code)}</div>`;
+      `<div class="room-host">Open game • ${escapeHtml(r.code)} • ⏱ ${fmtMoveTime(r.moveTime)} per move</div>`;
     const btn=document.createElement('button');
     btn.textContent='Join';
     btn.onclick=()=>joinSpecificRoom(r.code);
@@ -6082,6 +6224,7 @@ async function joinRoom(){
 
   roomId=raw;
   myColor='b';
+  MOVE_TIME=_validMoveTime(room.moveTime);
   roomType=room.type||'private';
   spectatorEnabled=!!room.spectatorEnabled;
   gameStarted=true;
@@ -6118,6 +6261,11 @@ function startGame(){
   drawOfferPending=false;
   roomCleanedUp=false;
   coinsAwardedThisGame=false;
+  xpAwardedThisGame=false;
+  roomXp={w:null,b:null};
+  roomXp[myColor]=myXpOrNull();
+  fbPatch(`rooms/${roomId}/xp`,{[myColor]:myXpOrNull()===null?-1:myXpOrNull()});
+  { const rx=document.getElementById('result-xp'); if(rx) rx.innerHTML=''; }
   adminBypassOn=false;
   refreshAdminBypassBtn();
   loadAdminData().then(_syncRbdToRoom);
@@ -6274,6 +6422,10 @@ async function pollMoves(){
     }
 
     roomRbd=_normRbd(room.returnByDeath);
+    if(room.xp&&typeof room.xp==='object'){
+      const nx={w:_numOrNull(room.xp.w),b:_numOrNull(room.xp.b)};
+      if(nx.w!==roomXp.w||nx.b!==roomXp.b){ roomXp=nx; refreshPlayerLabels(); }
+    }
     _checkSubaruEdit(room,true);
     _checkOpponentBuild(room);
     if(room.skins){
@@ -6455,7 +6607,7 @@ async function loadLiveGames(){
     const info=document.createElement('div');
     info.innerHTML=
       `<div class="game-title">${escapeHtml(r.whiteName||'Player 1')} vs ${escapeHtml(r.blackName||'Player 2')}</div>`+
-      `<div class="game-meta">Room ${escapeHtml(r.code)} · <span class="live-badge">● LIVE</span></div>`;
+      `<div class="game-meta">Room ${escapeHtml(r.code)} · ⏱ ${fmtMoveTime(r.moveTime)} · <span class="live-badge">● LIVE</span></div>`;
     const btn=document.createElement('button');
     btn.textContent='Spectate';
     btn.onclick=()=>openSpectator(r.code);
@@ -6486,6 +6638,7 @@ async function openSpectator(code,opts={}){
     return;
   }
   staffSpectateRole=force?adminRole():'';
+  MOVE_TIME=_validMoveTime(room.moveTime);
   _lastSubaruId=(room.subaruEdit&&room.subaruEdit.id)||null;
   _refreshStaffBar(room);
 
@@ -6528,9 +6681,12 @@ function renderSpectatorRoom(room){
 
   document.getElementById('spectate-white').textContent=room.whiteName||'Player 1';
   document.getElementById('spectate-black').textContent=room.blackName||'Player 2';
-  { const a=document.getElementById('stl-white'), b=document.getElementById('stl-black');
-    if(a) a.textContent=room.whiteName||'Player 1';
-    if(b) b.textContent=room.blackName||'Player 2'; }
+  { const xpw=_numOrNull(room.xp&&room.xp.w), xpb=_numOrNull(room.xp&&room.xp.b);
+    const put=(id,h)=>{ const el=document.getElementById(id); if(el&&el.dataset.sig!==h){ el.dataset.sig=h; el.innerHTML=h; } };
+    put('stl-white',titleBadgeHtml(xpw)+escapeHtml(room.whiteName||'Player 1'));
+    put('stl-black',titleBadgeHtml(xpb)+escapeHtml(room.blackName||'Player 2'));
+    put('str-white',rankLineHtml(xpw));
+    put('str-black',rankLineHtml(xpb)); }
   spectatorNames={ w:room.whiteName||'Player 1', b:room.blackName||'Player 2' };
 
   if(room.skins){
@@ -6875,6 +7031,7 @@ function triggerGameEnd(type,winner,reason){
   const iWin=winner===myColor;
 
   if(iWin) awardWinCoins();
+  awardGameXp(isDraw?'draw':iWin?'win':'loss',type);
 
   const icon=isDraw?'🤝':iWin?'🏆':'💔';
   const title=isDraw?'Draw':iWin?'Victory!':'Defeated';
@@ -8578,7 +8735,7 @@ function toggleRbd(){
   showToast(_rbdPref?'💀 Return by Death ON — your captured pieces come back':'Return by Death is off',2600);
 }
 
-const APP_BUILD='2026-11-18-check1';
+const APP_BUILD='2026-11-18-ranks1';
 const RBD_AUDIO_URL='sounds/return-by-death.mp3';
 let _rbdAudio=null;
 try{ _rbdAudio=new Audio(RBD_AUDIO_URL); _rbdAudio.preload='auto'; }catch(e){}
@@ -8965,6 +9122,118 @@ function playSubaruEdit(isPlayer){
   v.addEventListener('ended',finish);
   v.addEventListener('error',()=>{ showToast('Could not load the video',2500); setTimeout(finish,1500); });
   tryPlay();
+}
+
+/* ============================================================
+   RANKS & XP  (saved to users/<uid>/xp)
+   Lower ranks show under your name; titled ranks (NM and up) show a
+   title badge in front of your name.
+============================================================ */
+var roomXp={w:null,b:null};
+var xpAwardedThisGame=false;
+function _numOrNull(v){ v=Number(v); return (isFinite(v)&&v>=0)?Math.floor(v):null; }
+function myXpOrNull(){ return (isGuest||!userProfile)?null:Math.max(0,Number(userProfile.xp)||0); }
+function rankIndex(xp){ let i=0; for(let k=0;k<RANKS.length;k++) if(xp>=RANKS[k].xp) i=k; return i; }
+function rankOf(xp){ if(xp===null||xp===undefined||!isFinite(xp)||xp<0) return null; return RANKS[rankIndex(xp)]; }
+function titleBadgeHtml(xp){
+  const r=rankOf(xp);
+  return (r&&r.title)?`<span class="title-badge t-${r.title.toLowerCase()}" title="${escapeHtml(r.name)}">${r.title}</span>`:'';
+}
+// shown under the name for ranks without a title
+function rankLineHtml(xp){
+  const r=rankOf(xp);
+  if(!r) return '';
+  if(r.title) return `<span class="rank-line titled">${escapeHtml(r.name)}</span>`;
+  return `<span class="rank-line">${escapeHtml(r.name)}</span>`;
+}
+
+function renderRankCard(){
+  const el=document.getElementById('rank-card');
+  if(!el) return;
+  const xp=myXpOrNull();
+  if(xp===null){ el.classList.remove('hidden'); el.innerHTML='<div class="rc-guest">Sign in with Google to earn XP and climb the chess ranks.</div>'; return; }
+  const i=rankIndex(xp), r=RANKS[i], next=RANKS[i+1];
+  const pct=next?Math.min(100,Math.round((xp-r.xp)/(next.xp-r.xp)*100)):100;
+  el.classList.remove('hidden');
+  el.innerHTML=
+    `<div class="rc-top"><div class="rc-name">${titleBadgeHtml(xp)}<span>${escapeHtml(r.name)}</span></div><div class="rc-xp">${xp.toLocaleString()} XP</div></div>`+
+    `<div class="rc-bar"><span style="width:${pct}%"></span></div>`+
+    `<div class="rc-next">${next?`${(next.xp-xp).toLocaleString()} XP to <strong>${escapeHtml(next.name)}</strong>${next.title?` <span class="rc-unlock">(unlocks ${next.title} title)</span>`:''}`:'Highest rank reached 👑'}</div>`;
+}
+
+let _lbSort='wins';
+function setLeaderboardSort(k){
+  _lbSort=k==='xp'?'xp':'wins';
+  document.querySelectorAll('.lb-sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===_lbSort));
+  const sub=document.getElementById('lb-sub');
+  if(sub) sub.textContent=_lbSort==='xp'?'Top players ranked by XP and chess rank.':'Top players ranked by total wins.';
+  loadLeaderboard();
+}
+
+// Work out what this game earned from your own moves in the move list
+function computeGameXp(result,endType){
+  const mine=(G.log||[]).filter(e=>e&&e.color===myColor&&e.note&&e.note!=='(time)').map(e=>String(e.note));
+  const items=[];
+  const add=(label,xp)=>{ if(xp>0) items.push({label,xp}); };
+  if(result==='win'){
+    // a win where you barely moved (instant resign/disconnect) is worth less
+    add(mine.length>=3?'Victory':'Victory (short game)', mine.length>=3?XP_RULES.win:10);
+    if(endType==='checkmate') add('Checkmate',XP_RULES.checkmate);
+    if(mine.length>=3&&mine.length<=20) add('Quick win',XP_RULES.quickWin);
+  }else if(result==='draw') add('Draw',XP_RULES.draw);
+  else if(mine.length>=5) add('Played it out',XP_RULES.loss);
+  const caps=mine.filter(n=>n.includes('x')).length;
+  const checks=mine.filter(n=>n.includes('+')).length;
+  const promos=mine.filter(n=>n.includes('=')).length;
+  const eps=mine.filter(n=>n.includes('e.p.')).length;
+  const castled=mine.some(n=>n.startsWith('O-O'));
+  add(`Captures ×${caps}`,Math.min(XP_RULES.captureCap,caps*XP_RULES.capture));
+  add(`Checks ×${checks}`,Math.min(XP_RULES.checkCap,checks*XP_RULES.check));
+  if(castled) add('Castled',XP_RULES.castle);
+  add(`Promotions ×${promos}`,promos*XP_RULES.promotion);
+  add(`En passant ×${eps}`,eps*XP_RULES.enPassant);
+  return {items,total:items.reduce((a,b)=>a+b.xp,0)};
+}
+
+async function awardGameXp(result,endType){
+  if(xpAwardedThisGame) return;
+  xpAwardedThisGame=true;
+  const box=document.getElementById('result-xp');
+  if(isGuest||!currentUser||!userProfile){
+    if(box) box.innerHTML='<div class="rx-guest">Sign in with Google to earn XP and ranks.</div>';
+    return;
+  }
+  const {items,total}=computeGameXp(result,endType);
+  const before=Math.max(0,Number(userProfile.xp)||0);
+  const after=before+total;
+  const rBefore=rankOf(before), rAfter=rankOf(after);
+  if(box){
+    box.innerHTML=`<div class="rx-total">+${total} XP</div>`+
+      (items.length?`<div class="rx-items">${items.map(i=>`<span>${escapeHtml(i.label)} <b>+${i.xp}</b></span>`).join('')}</div>`:'')+
+      `<div class="rx-rank">${titleBadgeHtml(after)}${escapeHtml(rAfter.name)} · ${after.toLocaleString()} XP</div>`;
+  }
+  if(total<=0) return;
+  userProfile.xp=after;
+  try{
+    // re-read so two tabs/games can't overwrite each other's XP
+    const cur=await fbGet(`users/${currentUser.uid}/xp`);
+    const base=(typeof cur==='number'&&cur>=0)?cur:before;
+    userProfile.xp=base+total;
+    await fbSet(`users/${currentUser.uid}/xp`,userProfile.xp);
+  }catch(e){}
+  updatePlayerNameDisplay(); renderAccountInfo&&renderAccountInfo(); updateAccountButton();
+  if(rBefore&&rAfter&&rBefore.name!==rAfter.name) showRankUp(rAfter);
+}
+
+function showRankUp(r){
+  const el=document.createElement('div');
+  el.className='rankup-banner';
+  el.innerHTML=`<div class="ru-label">⬆ Rank up</div><div class="ru-name">${r.title?`<span class="title-badge t-${r.title.toLowerCase()}">${r.title}</span>`:''}${escapeHtml(r.name)}</div>`+
+    (r.title?`<div class="ru-sub">You earned the ${escapeHtml(r.title)} title</div>`:'');
+  document.body.appendChild(el);
+  if(_moveSoundsOn) playMoveSound('end');
+  setTimeout(()=>el.classList.add('out'),3800);
+  setTimeout(()=>el.remove(),4500);
 }
 </script>
 
