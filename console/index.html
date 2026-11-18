@@ -72,6 +72,17 @@
   .google svg{width:18px;height:18px}
   .denied{color:var(--bad);font-family:'Cinzel',serif;letter-spacing:2px}
   .note{font-size:.88rem;color:var(--muted);line-height:1.45}
+  .games{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .game{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .game-title{font-weight:600;font-size:1.05rem}
+  .game-title .vs{color:var(--muted);font-style:italic;font-weight:400;margin:0 4px}
+  .game-meta{color:var(--muted);font-size:.86rem;margin-top:2px}
+  .game-meta .live{color:var(--bad);font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:1px}
+  .game-meta .locked{color:var(--gold)}
+  .game-ctl{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .ab.mini{padding:6px 8px;align-items:center}
+  .ab.mini .t{font-size:.86rem}
+  .owner-only.hidden{display:none !important}
   .hidden{display:none !important}
   #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(90px);background:var(--surface);border:1px solid var(--gold);
     color:var(--text);padding:10px 20px;border-radius:9px;font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:1px;transition:transform .3s;z-index:50;max-width:calc(100% - 32px)}
@@ -83,13 +94,13 @@
 </head>
 <body>
   <h1>🛡 Owner Console</h1>
-  <p class="sub">Manage moderators and what they're allowed to use.</p>
+  <p class="sub">Watch live games and manage moderators.</p>
 
   <div class="wrap">
     <!-- signed out -->
     <div class="card center" id="signin-card">
-      <h2>Owners only</h2>
-      <p style="margin-bottom:16px">Sign in with the Google account of an owner to continue.</p>
+      <h2>Staff only</h2>
+      <p style="margin-bottom:16px">Sign in with the Google account of an owner or moderator to continue.</p>
       <button class="google" onclick="signIn()">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Sign in with Google
@@ -101,7 +112,7 @@
     <!-- signed in but not an owner -->
     <div class="card center hidden" id="denied-card">
       <h2 class="denied">Access denied</h2>
-      <p style="margin-bottom:14px">Only owners can open the console. You're signed in as <strong id="denied-email"></strong>.</p>
+      <p style="margin-bottom:14px">Only owners and moderators can open the console. You're signed in as <strong id="denied-email"></strong>.</p>
       <div class="row" style="justify-content:center">
         <button class="ghost" onclick="signOut()">Sign out</button>
         <button onclick="location.href='../'">Back to the game</button>
@@ -111,7 +122,7 @@
     <!-- owner view -->
     <div id="owner-view" class="hidden" style="display:flex;flex-direction:column;gap:16px">
       <div class="card me">
-        <div class="who">Signed in as <strong id="me-email"></strong> <span class="badge owner">Owner</span></div>
+        <div class="who">Signed in as <strong id="me-email"></strong> <span class="badge owner" id="me-badge">Owner</span></div>
         <div class="row">
           <button class="ghost" onclick="location.href='../'">Back to game</button>
           <button class="ghost" onclick="signOut()">Sign out</button>
@@ -119,12 +130,21 @@
       </div>
 
       <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px">
+          <h2 style="margin:0">Live games</h2>
+          <button class="ghost" onclick="loadGames(true)">Refresh</button>
+        </div>
+        <p id="games-note">Spectate any game in progress — even ones that don't allow spectators. Your Owner/Mod tag shows in chat while you watch from here.</p>
+        <div class="games" id="games"><div class="empty">Loading…</div></div>
+      </div>
+
+      <div class="card owner-only">
         <h2>Moderators</h2>
         <p>Mods can use <strong>Admin Bypass</strong> by default. Switch on anything else you want a mod to have — changes save instantly and apply the next time they start a game.</p>
         <div class="mods" id="mods"><div class="empty">Loading…</div></div>
       </div>
 
-      <div class="card">
+      <div class="card owner-only">
         <h2>Add a moderator</h2>
         <p style="margin-bottom:12px">They must sign in to the game with this Google account.</p>
         <div class="row">
@@ -133,7 +153,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card owner-only">
         <h2>Owners</h2>
         <p>Owners can use every ability and open this console. The owner list is set in <code>admin-config.js</code>.</p>
         <ul class="owners" id="owners"></ul>
@@ -165,6 +185,7 @@ function safeKey(s){ return String(s).trim().toLowerCase().replace(/[^a-z0-9]/g,
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function fbGet(p){ try{ const r=await fetch(`${FB}/${p}.json`,{cache:'no-store'}); return r.ok?r.json():null; }catch(e){ return null; } }
 async function fbPut(p,d){ try{ const r=await fetch(`${FB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }catch(e){ return false; } }
+async function fbPatchJson(p,d){ try{ const r=await fetch(`${FB}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }catch(e){ return false; } }
 async function fbDel(p){ try{ const r=await fetch(`${FB}/${p}.json`,{method:'DELETE'}); return r.ok; }catch(e){ return false; } }
 
 let _tt=null;
@@ -197,20 +218,93 @@ async function signIn(){
 }
 async function signOut(){ try{ await auth.signOut(); }catch(e){} }
 
-function onUser(user){
-  if(!user){ me=''; show('signin-card'); document.getElementById('signin-status').textContent=''; return; }
+let myRole='';
+async function onUser(user){
+  if(!user){ me=''; myRole=''; show('signin-card'); document.getElementById('signin-status').textContent=''; return; }
   const email=String(user.email||'').trim().toLowerCase();
-  if(!email||user.emailVerified===false||!OWNERS.includes(email)){
+  let role='';
+  if(email&&user.emailVerified!==false){
+    if(OWNERS.includes(email)) role='owner';
+    else if(BUILTIN_MODS.includes(email)) role='mod';
+    else{
+      const m=await fbGet('adminMods');
+      if(m&&typeof m==='object'&&Object.values(m).some(x=>String(x).trim().toLowerCase()===email)) role='mod';
+    }
+  }
+  if(!role){
+    me=''; myRole='';
     document.getElementById('denied-email').textContent=user.email||'an unknown account';
     show('denied-card');
     return;
   }
-  me=email;
+  myRole=role;
+  me=role==='owner'?email:'';      // only owners can change grants / mods
   document.getElementById('me-email').textContent=user.email;
+  const badge=document.getElementById('me-badge');
+  badge.textContent=role==='owner'?'Owner':'Mod';
+  badge.className='badge '+(role==='owner'?'owner':'modb');
+  document.querySelectorAll('.owner-only').forEach(el=>el.classList.toggle('hidden',role!=='owner'));
   show('owner-view');
   document.getElementById('owner-view').style.display='flex';
-  renderOwners();
-  loadData();
+  loadGames(false);
+  startGamesPolling();
+  if(role==='owner'){ renderOwners(); loadData(); }
+}
+
+/* ---------- live games ---------- */
+let _gamesTimer=null, _gamesBusy=false;
+function startGamesPolling(){
+  clearInterval(_gamesTimer);
+  _gamesTimer=setInterval(()=>{ if(!document.hidden) loadGames(false); },6000);
+}
+function _rbdOf(r){ const v=r&&r.returnByDeath; return (v&&typeof v==='object')?{w:!!v.w,b:!!v.b}:{w:false,b:false}; }
+async function loadGames(manual){
+  if(!myRole||_gamesBusy) return;
+  _gamesBusy=true;
+  try{
+    const rooms=await fbGet('rooms');
+    const arr=[];
+    if(rooms&&typeof rooms==='object'){
+      for(const [code,r] of Object.entries(rooms)){
+        if(!r||r.status!=='playing'||!r.white||!r.black) continue;
+        arr.push({code,r});
+      }
+    }
+    arr.sort((a,b)=>(b.r.created||0)-(a.r.created||0));
+    renderGames(arr);
+    if(manual) toast(`${arr.length} live game${arr.length===1?'':'s'}`);
+  }finally{ _gamesBusy=false; }
+}
+function renderGames(arr){
+  const box=document.getElementById('games');
+  if(!arr.length){ box.innerHTML='<div class="empty">No games are being played right now.</div>'; return; }
+  box.innerHTML=arr.map(({code,r})=>{
+    const rbd=_rbdOf(r);
+    const ownerCtl=myRole==='owner'?`
+        <label class="ab mini"><input type="checkbox" ${rbd.w?'checked':''} data-code="${esc(code)}" data-color="w" onchange="setRbd(this)"><span class="sw" aria-hidden="true"></span><span class="t">💀 RbD White</span></label>
+        <label class="ab mini"><input type="checkbox" ${rbd.b?'checked':''} data-code="${esc(code)}" data-color="b" onchange="setRbd(this)"><span class="sw" aria-hidden="true"></span><span class="t">💀 RbD Black</span></label>`:'';
+    return `<div class="game">
+      <div class="game-info">
+        <div class="game-title">${esc(r.whiteName||'Player 1')} <span class="vs">vs</span> ${esc(r.blackName||'Player 2')}</div>
+        <div class="game-meta">Room ${esc(code)} · <span class="live">● LIVE</span>${r.spectatorEnabled?'':' · <span class="locked">spectators off</span>'}</div>
+      </div>
+      <div class="game-ctl">${ownerCtl}
+        <button data-code="${esc(code)}" onclick="spectate(this.dataset.code)">Spectate</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function spectate(code){
+  location.href='../?spectate='+encodeURIComponent(code)+'&via=console';
+}
+async function setRbd(el){
+  if(myRole!=='owner') return;
+  const code=el.dataset.code, color=el.dataset.color, on=el.checked;
+  el.disabled=true;
+  const ok=await fbPatchJson(`rooms/${code}/returnByDeath`,{[color]:on});
+  el.disabled=false;
+  if(!ok){ el.checked=!on; toast('Could not change — try again',true); return; }
+  toast(`💀 Return by Death ${on?'ON':'OFF'} for ${color==='w'?'White':'Black'} in ${code}`);
 }
 
 function renderOwners(){
