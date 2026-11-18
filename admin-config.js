@@ -13,7 +13,8 @@ window.ADMIN_CONFIG = {
   owners: [
     'chilten44pallock@gmail.com',
     '30copallock@pulaskischools.org',
-    'blueberryggames@gmail.com'
+    'blueberryggames@gmail.com',
+    '30chpallock@pulaskischools.org'
   ],
 
   mods: [
@@ -36,6 +37,12 @@ window.ADMIN_CONFIG = {
     { id:'crown',     name:'Coronation',   icon:'👑', modDefault:false,
       desc:'Turn one of your own pieces into a queen.' },
     { id:'forcedraw', name:'Force Draw',   icon:'🤝', modDefault:false,
-      desc:'Instantly end the current game as a draw.' }
+      desc:'Instantly end the current game as a draw.' },
+    { id:'summon',    name:'Summon',       icon:'✨', modDefault:false,
+      desc:'Place a new piece of your own on any empty square.' },
+    { id:'announce',  name:'Announce',     icon:'📢', modDefault:false,
+      desc:'Flash a big announcement banner on both players\' screens.' },
+    { id:'rbd',       name:'Return by Death', icon:'💀', modDefault:false,
+      desc:'Passive: while on, every captured piece plays a death cutscene for everyone in the game, spectators included.' }
   ]
 };

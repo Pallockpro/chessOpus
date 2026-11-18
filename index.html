@@ -2912,6 +2912,95 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 @keyframes timeWarp{0%{box-shadow:0 0 0 0 rgba(120,220,255,.9)}40%{box-shadow:0 0 0 10px rgba(120,220,255,.25),0 0 30px rgba(120,220,255,.7)}100%{box-shadow:0 0 0 0 rgba(120,220,255,0)}}
 .timer-box.warp .t-val{animation:warpSpin 1.1s ease-out}
 @keyframes warpSpin{0%{transform:rotateX(0);color:#8fe3ff}50%{transform:rotateX(360deg);color:#8fe3ff}100%{transform:rotateX(360deg)}}
+
+/* ---------- collapsible admin panel ---------- */
+#admin-tools{display:block !important;background:color-mix(in srgb,var(--surface) 80%,transparent);border:1px solid var(--border);border-radius:12px;padding:4px 8px}
+#admin-tools[style*="display: none"],#admin-tools[style*="display:none"]{display:none !important}
+#admin-tools-head{width:100%;display:flex;align-items:center;gap:10px;background:transparent !important;box-shadow:none !important;border:none;
+  padding:8px 4px;color:var(--text);cursor:pointer;transform:none !important}
+#admin-tools-head:hover{background:var(--gold-dim) !important;border-radius:8px}
+#admin-tools-head #admin-role-badge{flex:1;text-align:left;grid-column:auto}
+#admin-active-count{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:1.5px;color:#ff8a3c;text-transform:uppercase}
+#admin-active-count:empty{display:none}
+.admin-chev{font-size:.8rem;color:var(--gold);transition:transform .38s cubic-bezier(.4,0,.2,1)}
+#admin-tools.collapsed .admin-chev{transform:rotate(-90deg)}
+#admin-tools-body{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .38s cubic-bezier(.4,0,.2,1),opacity .3s ease}
+#admin-tools.collapsed #admin-tools-body{grid-template-rows:0fr;opacity:0}
+.admin-grid{min-height:0;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 2px 8px}
+.admin-grid button{min-width:0;width:100%;padding:9px 8px;font-size:.66rem;letter-spacing:1.2px}
+#summon-btn{border-color:rgba(190,140,255,.5);color:#d4b6ff}
+#summon-btn.armed{color:#fff;border-color:#c49bff;background:linear-gradient(180deg,#9d6bff,#5b2fb8);box-shadow:0 0 16px rgba(157,107,255,.55)}
+#announce-btn{border-color:rgba(255,170,90,.5);color:#ffc48a}
+#rbd-btn{grid-column:1/-1;border-color:rgba(170,90,220,.5);color:#d6a3ff}
+#rbd-btn.armed{color:#fff;border-color:#b06bff;background:linear-gradient(180deg,#3b1257,#14051f);box-shadow:0 0 16px rgba(160,80,255,.55);animation:rbdArmed 2s ease-in-out infinite}
+@keyframes rbdArmed{50%{box-shadow:0 0 26px rgba(190,120,255,.85)}}
+#board.summon-armed .sq{cursor:copy}
+#board.summon-armed .sq:not(:has(.piece-wrap)):hover::before{background:rgba(190,140,255,.22);outline:2px dashed rgba(190,140,255,.9);outline-offset:-4px}
+.summon-fx .crown-ring{border-color:#c49bff;box-shadow:0 0 18px #9d6bff}
+#summon-modal{display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px}
+#summon-modal.show{display:flex}
+#summon-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;animation:popIn .2s ease}
+#summon-box h3{font-family:'Cinzel',serif;color:var(--gold);letter-spacing:2px;font-size:.9rem;margin-bottom:12px}
+#summon-choices{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.summon-choice{width:64px;height:64px;padding:6px;background:var(--surface2) !important;border:1px solid var(--border);box-shadow:none !important;display:flex;align-items:center;justify-content:center}
+.summon-choice:hover{border-color:var(--gold)}
+.summon-choice .piece-wrap{width:100%;height:100%}
+
+/* ---------- announcement banner ---------- */
+.announce-banner{position:fixed;left:0;right:0;top:38%;z-index:7000;pointer-events:none;text-align:center;padding:18px 16px;
+  background:linear-gradient(90deg,transparent,rgba(10,8,4,.92) 15%,rgba(10,8,4,.92) 85%,transparent);
+  border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);animation:annIn .55s cubic-bezier(.2,.8,.3,1) both}
+.announce-banner.out{animation:annOut .55s ease-in forwards}
+.ab-label{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+.ab-text{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(1.1rem,4vw,2rem);color:#fff;letter-spacing:.04em;text-shadow:0 0 16px color-mix(in srgb,var(--gold) 60%,transparent);word-break:break-word}
+@keyframes annIn{from{transform:scaleY(0) translateX(-30%);opacity:0}to{transform:none;opacity:1}}
+@keyframes annOut{to{transform:translateX(30%) scaleY(.2);opacity:0}}
+
+/* ---------- Return by Death cutscene ---------- */
+#rbd-scene{position:fixed;inset:0;z-index:6600;opacity:0;transition:opacity .45s ease;cursor:pointer;overflow:hidden;color:#fff}
+#rbd-scene.show{opacity:1}
+#rbd-scene.out{opacity:0}
+.rbd-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#2a0c3d 0%,#12041c 45%,#000 85%);animation:rbdPulse 1.4s ease-in-out infinite}
+@keyframes rbdPulse{50%{filter:brightness(1.25) saturate(1.2)}}
+#rbd-scene::after{content:'';position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;animation:rbdFlash .7s ease-out}
+@keyframes rbdFlash{0%{opacity:.85}100%{opacity:0}}
+.rbd-clock{position:absolute;left:50%;top:50%;width:min(80vmin,640px);height:min(80vmin,640px);transform:translate(-50%,-50%);border-radius:50%;
+  border:2px solid rgba(190,120,255,.25);box-shadow:0 0 60px rgba(150,60,220,.25) inset,0 0 40px rgba(150,60,220,.2)}
+.rbd-hand{position:absolute;left:50%;bottom:50%;width:3px;transform-origin:50% 100%;background:linear-gradient(0deg,rgba(210,160,255,.7),transparent);border-radius:2px}
+.rbd-hand.h1{height:42%;animation:rbdHand 3s linear infinite}
+.rbd-hand.h2{height:30%;width:5px;animation:rbdHand 9s linear infinite}
+@keyframes rbdHand{from{transform:translateX(-50%) rotate(0deg)}to{transform:translateX(-50%) rotate(360deg)}}
+#rbd-scene.rewind .rbd-hand.h1{animation-duration:.6s;animation-direction:reverse}
+#rbd-scene.rewind .rbd-hand.h2{animation-duration:1.8s;animation-direction:reverse}
+#rbd-scene.rewind .rbd-bg{animation:rbdRewind .25s steps(2) infinite}
+@keyframes rbdRewind{50%{filter:hue-rotate(40deg) brightness(1.4)}}
+.rbd-bar{position:absolute;left:0;right:0;height:12vh;background:#000;display:flex;align-items:center;justify-content:center;padding:0 16px;z-index:3;
+  transition:transform .55s cubic-bezier(.65,0,.35,1)}
+.rbd-bar.top{top:0;transform:translateY(-100%)}
+.rbd-bar.bottom{bottom:0;transform:translateY(100%)}
+#rbd-scene.show .rbd-bar{transform:none}
+.rbd-title{font-family:'Cinzel',serif;font-weight:900;letter-spacing:.45em;font-size:clamp(.9rem,3.2vw,1.7rem);color:#e9d2ff;
+  text-shadow:0 0 12px #9b4dff,0 0 28px #5a1a99;animation:rbdGlitch 2.2s steps(1) infinite}
+@keyframes rbdGlitch{0%,100%{transform:none}92%{transform:translate(2px,-1px);text-shadow:-2px 0 #ff3b6b,2px 0 #3bd5ff}94%{transform:translate(-2px,1px)}}
+.rbd-caption{font-family:'Crimson Pro',serif;font-style:italic;font-size:clamp(.95rem,2.6vw,1.25rem);color:#eadcff;text-align:center}
+.rbd-caption strong{font-style:normal;color:#c58bff;letter-spacing:.12em;text-transform:uppercase}
+.rbd-stage{position:absolute;inset:12vh 0;display:flex;align-items:center;justify-content:center;gap:clamp(12px,4vw,48px);z-index:2;padding:0 16px;flex-wrap:wrap}
+.rbd-gif-wrap{border-radius:14px;overflow:hidden;border:2px solid rgba(190,120,255,.55);box-shadow:0 0 40px rgba(150,60,220,.55),0 20px 50px rgba(0,0,0,.6);
+  animation:rbdGifIn .7s cubic-bezier(.2,.8,.3,1) both;background:#000}
+.rbd-gif{display:block;width:min(70vw,420px);height:auto;max-height:46vh;object-fit:cover}
+@keyframes rbdGifIn{from{transform:scale(.6) rotate(-4deg);opacity:0;filter:blur(8px)}to{transform:none;opacity:1;filter:none}}
+.rbd-piece{width:min(18vmin,130px);height:min(18vmin,130px);display:flex;align-items:center;justify-content:center;
+  animation:rbdPieceDie 2.6s ease-in forwards;filter:drop-shadow(0 0 14px rgba(180,90,255,.8))}
+.rbd-piece .piece-wrap{width:100%;height:100%}
+@keyframes rbdPieceDie{0%{transform:translateY(-10px);opacity:1}55%{opacity:1}100%{transform:translateY(30px) scale(.7) rotate(-18deg);opacity:0;filter:grayscale(1) blur(3px)}}
+#rbd-scene.rewind .rbd-piece{animation:rbdPieceBack 1.2s ease-out forwards}
+@keyframes rbdPieceBack{0%{transform:translateY(30px) scale(.7) rotate(-18deg);opacity:0}100%{transform:none;opacity:.55;filter:grayscale(.6)}}
+.rbd-player{position:absolute;right:16px;bottom:calc(12vh + 12px);z-index:4;background:rgba(10,4,16,.85);border:1px solid rgba(190,120,255,.4);border-radius:10px;padding:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.rbd-np{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:2px;color:#c9a3ff;text-transform:uppercase;margin:0 2px 4px}
+.rbd-player iframe{display:block;width:200px;height:113px;border:0;border-radius:6px}
+.rbd-skip{position:absolute;right:16px;top:calc(12vh + 10px);z-index:4;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase}
+@media(max-width:620px){.rbd-player iframe{width:160px;height:90px}.rbd-player{right:10px}}
 </style>
 </head>
 
@@ -3232,13 +3321,32 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
   </div>
 
   <div id="admin-tools" style="display:none;">
-    <div id="admin-role-badge"></div>
+    <button type="button" id="admin-tools-head" onclick="toggleAdminPanel()" aria-expanded="true" aria-controls="admin-tools-body">
+      <span id="admin-role-badge"></span>
+      <span id="admin-active-count"></span>
+      <span class="admin-chev" aria-hidden="true">▾</span>
+    </button>
+    <div id="admin-tools-body">
+      <div class="admin-grid">
     <button class="ghost" id="admin-bypass-btn" onclick="toggleAdminBypass()" style="display:none;">Admin Bypass: Off</button>
     <button class="ghost" id="chili-strike-btn" onclick="toggleChiliStrike()" style="display:none;" title="Click any piece to blow it up">🌶 Chili Strike: Off</button>
     <button class="ghost" id="evict-btn" onclick="toggleEvict()" style="display:none;" title="Click any piece to eject it into space">🚀 Evict: Off</button>
     <button class="ghost" id="timewarp-btn" onclick="useTimeWarp()" style="display:none;" title="Refill your clock to full">⏳ Time Warp</button>
     <button class="ghost" id="crown-btn" onclick="toggleCrown()" style="display:none;" title="Turn one of your pieces into a queen">👑 Coronation: Off</button>
     <button class="ghost" id="forcedraw-btn" onclick="useForceDraw()" style="display:none;" title="End the game as a draw">🤝 Force Draw</button>
+        <button class="ghost" id="summon-btn" onclick="toggleSummon()" style="display:none;" title="Place a new piece on an empty square">✨ Summon: Off</button>
+        <button class="ghost" id="announce-btn" onclick="useAnnounce()" style="display:none;" title="Show a banner on both screens">📢 Announce</button>
+        <button class="ghost" id="rbd-btn" onclick="toggleRbd()" style="display:none;" title="Passive: every captured piece plays a death cutscene">💀 Return by Death: Off</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="summon-modal" role="dialog" aria-modal="true" aria-label="Choose a piece to summon">
+    <div id="summon-box">
+      <h3>✨ Summon a piece</h3>
+      <div id="summon-choices"></div>
+      <button class="ghost" onclick="closeSummonPicker()">Cancel</button>
+    </div>
   </div>
 
   <div id="game-chat" class="chat-panel">
@@ -5897,6 +6005,7 @@ function startGame(){
   gameStarted=true;
   gameEnded=false;
   _lastRoomSkinSig=null;
+  roomRbd=false;
   playerNames={ w:'', b:'' };
   playerNames[myColor]=myName;
   leaveProcessed=false;
@@ -5906,7 +6015,7 @@ function startGame(){
   coinsAwardedThisGame=false;
   adminBypassOn=false;
   refreshAdminBypassBtn();
-  loadAdminData();
+  loadAdminData().then(_syncRbdToRoom);
 
   if(gameEndReturnTimer){ clearInterval(gameEndReturnTimer); gameEndReturnTimer=null; }
   if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
@@ -6057,6 +6166,7 @@ async function pollMoves(){
       return;
     }
 
+    roomRbd=!!room.returnByDeath;
     if(room.skins){
       currentRoomSkins = {
         w: room.skins.w || 'classic',
@@ -6115,6 +6225,10 @@ async function pollMoves(){
         applyTimeWarp(md.color,false);
       }else if(md&&md.crown){
         applyCrown(md.r,md.c,false);
+      }else if(md&&md.summon){
+        applySummon(md.r,md.c,md.piece,false);
+      }else if(md&&md.announce){
+        showAnnouncement(md.announce,md.name);
       }else if(md){
         const remoteColor=myColor==='w'?'b':'w';
         if(md.color&&md.color!==remoteColor) return;
@@ -6326,6 +6440,8 @@ function renderSpectatorRoom(room){
   if(!isFinite(timeLeft.w)) timeLeft.w=MOVE_TIME;
   if(!isFinite(timeLeft.b)) timeLeft.b=MOVE_TIME;
 
+  const _prevSpec=spectatorState;
+  spectatorRbd=!!room.returnByDeath;
   spectatorState={
     board:decodedBoard,
     turn:(st.turn==='b'||st.turn==='w')?st.turn:'w',
@@ -6350,6 +6466,16 @@ function renderSpectatorRoom(room){
     spectateSig=sig;
     renderSpectatorBoard();
     renderSpectatorUI();
+    // Return by Death for spectators: a new capture since the last poll
+    const lm=spectatorState.lastMove, n=spectatorState.log.length;
+    if(spectatorRbd&&_prevSpec&&lm&&n===_prevSpec.log.length+1){
+      const note=String((spectatorState.log[n-1]||{}).note||'');
+      if(note.includes('x')){
+        let victim=_prevSpec.board?.[lm.tr]?.[lm.tc];
+        if(!victim){ const mover=_prevSpec.turn; victim=mover==='w'?'p':'P'; }
+        triggerReturnByDeath(victim,spectatorSkins,false);
+      }
+    }
   }
 
   renderSpectatorTimers();
@@ -6825,6 +6951,7 @@ function executeMove(move,local){
 
   const note=toSAN(G.board,move,G.turn,G.castling,G.enPassant);
   const isCapture=!!G.board[move.tr][move.tc]||move.isEnPassant;
+  const _victim=G.board[move.tr][move.tc]||(move.isEnPassant?(G.turn==='w'?'p':'P'):null);
   const isPawn=p.toLowerCase()==='p';
   const movedColor=G.turn;
   const _anim=prepareMoveAnim(move,movedColor);
@@ -6855,6 +6982,7 @@ function executeMove(move,local){
 
   renderBoard();
   runMoveAnim(_anim);
+  if(isCapture&&_victim&&roomRbd) triggerReturnByDeath(_victim,currentRoomSkins,true);
   updateUI();
   renderTimers();
 
@@ -6908,6 +7036,10 @@ function handleSquareClick(r,c){
   }
   if(crownActive()){
     if(G.board[r][c]) crownPiece(r,c);
+    return;
+  }
+  if(summonActive()){
+    summonAt(r,c);
     return;
   }
 
@@ -6988,6 +7120,7 @@ function renderBoard(){
   boardEl.classList.toggle('chili-armed',chiliStrikeActive());
   boardEl.classList.toggle('evict-armed',evictActive());
   boardEl.classList.toggle('crown-armed',crownActive());
+  boardEl.classList.toggle('summon-armed',summonActive());
 
   const flip=myColor==='b';
   const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
@@ -7398,6 +7531,7 @@ function _disarmAll(except){
   if(except!=='chili') chiliStrikeOn=false;
   if(except!=='evict') evictOn=false;
   if(except!=='crown') crownOn=false;
+  if(except!=='summon') summonOn=false;
 }
 function _setArmedBtn(id,show,on,label){
   const b=document.getElementById(id);
@@ -7424,6 +7558,14 @@ function refreshChiliStrikeBtn(){
   _setArmedBtn('crown-btn',hasAbility('crown'),crownOn,'👑 Coronation: '+(crownOn?'Armed':'Off'));
   _setArmedBtn('timewarp-btn',hasAbility('timewarp'),false,null);
   _setArmedBtn('forcedraw-btn',hasAbility('forcedraw'),false,null);
+  if(!hasAbility('summon')) summonOn=false;
+  _setArmedBtn('summon-btn',hasAbility('summon'),summonOn,'✨ Summon: '+(summonOn?'Armed':'Off'));
+  _setArmedBtn('announce-btn',hasAbility('announce'),false,null);
+  _setArmedBtn('rbd-btn',hasAbility('rbd'),hasAbility('rbd')&&_rbdPref,'💀 Return by Death: '+(hasAbility('rbd')&&_rbdPref?'On':'Off'));
+  const active=[adminBypassOn,chiliStrikeOn,evictOn,crownOn,summonOn,hasAbility('rbd')&&_rbdPref].filter(Boolean).length;
+  const ac=document.getElementById('admin-active-count');
+  if(ac) ac.textContent=active?`${active} active`:'';
+  _applyAdminPanelState();
 }
 function toggleChiliStrike(){
   if(!chiliStrikeAllowed()) return;
@@ -8085,6 +8227,178 @@ function useForceDraw(){
   const reason='Draw declared by an admin';
   broadcastEnd('draw',reason);
   triggerGameEnd('draw','draw',reason);
+}
+
+/* ============================================================
+   MORE OWNER ABILITIES: Summon, Announce, Return by Death
+   + collapsible admin panel
+============================================================ */
+
+/* ---------- collapsible panel ---------- */
+let _adminCollapsed=false;
+try{ _adminCollapsed=localStorage.getItem('chess-admin-collapsed')==='1'; }catch(e){}
+function _applyAdminPanelState(){
+  const t=document.getElementById('admin-tools'), h=document.getElementById('admin-tools-head');
+  if(!t) return;
+  t.classList.toggle('collapsed',_adminCollapsed);
+  if(h) h.setAttribute('aria-expanded',String(!_adminCollapsed));
+  const body=document.getElementById('admin-tools-body');
+  if(body) body.inert=_adminCollapsed;
+}
+function toggleAdminPanel(){
+  _adminCollapsed=!_adminCollapsed;
+  try{ localStorage.setItem('chess-admin-collapsed',_adminCollapsed?'1':'0'); }catch(e){}
+  _applyAdminPanelState();
+}
+
+/* ---------- Summon ---------- */
+let summonOn=false, _summonSq=null;
+function summonActive(){ return summonOn && hasAbility('summon'); }
+function toggleSummon(){
+  if(!hasAbility('summon')) return;
+  summonOn=!summonOn;
+  if(summonOn) _disarmAll('summon');
+  selected=null; legalNow=[];
+  refreshAdminBypassBtn(); renderBoard();
+  if(summonOn) showToast('✨ Summon armed — click an empty square',2200);
+}
+function summonAt(r,c){
+  if(!summonActive()||chiliFxBusy||gameEnded) return;
+  if(G.board[r][c]){ showToast('Pick an empty square',1800); return; }
+  _summonSq=[r,c];
+  const box=document.getElementById('summon-choices');
+  const types=['q','r','b','n','p'].filter(t=>!(t==='p'&&(r===0||r===7)));
+  box.innerHTML='';
+  types.forEach(t=>{
+    const pc=myColor==='w'?t.toUpperCase():t;
+    const b=document.createElement('button');
+    b.type='button'; b.className='summon-choice'; b.title=PIECE_NAMES[t];
+    b.appendChild(makePieceEl(pc,findSkin(currentRoomSkins[myColor]||'classic')));
+    b.onclick=()=>{ closeSummonPicker(); if(_summonSq&&!G.board[_summonSq[0]][_summonSq[1]]) applySummon(_summonSq[0],_summonSq[1],pc,true); };
+    box.appendChild(b);
+  });
+  document.getElementById('summon-modal').classList.add('show');
+}
+function closeSummonPicker(){ document.getElementById('summon-modal').classList.remove('show'); }
+function applySummon(r,c,pc,local){
+  if(gameEnded||!pc||!PIECE_FILES[pc]||pc.toLowerCase()==='k') return;
+  if(G.board[r]?.[c]) return;
+  G.board[r][c]=pc;
+  G.halfClock=0;
+  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
+  G.status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
+  selected=null; legalNow=[];
+  if(local) sendMoveData({summon:true,r,c,piece:pc,color:myColor}).catch(()=>{});
+  renderBoard(); updateUI(); renderTimers();
+  const sq=document.querySelector(`#board .sq[data-r="${r}"][data-c="${c}"]`);
+  if(sq){
+    const fx=document.createElement('div');
+    fx.className='crown-fx summon-fx';
+    fx.innerHTML='<span class="crown-ring"></span><span class="crown-ring r2"></span><span class="crown-icon">✨</span>';
+    sq.appendChild(fx);
+    setTimeout(()=>fx.remove(),1700);
+  }
+  if(_moveSoundsOn) playMoveSound('check');
+  showToast(`✨ A ${pieceDisplayName(pc)} was summoned`,2400);
+}
+
+/* ---------- Announce ---------- */
+function useAnnounce(){
+  if(!hasAbility('announce')||gameEnded||!gameStarted) return;
+  const text=(prompt('Announcement (shown to both players):','')||'').trim().slice(0,90);
+  if(!text) return;
+  sendMoveData({announce:text,name:myName,color:myColor}).catch(()=>{});
+  showAnnouncement(text,myName);
+}
+function showAnnouncement(text,name){
+  text=String(text||'').slice(0,90);
+  if(!text) return;
+  const el=document.createElement('div');
+  el.className='announce-banner';
+  el.innerHTML=`<div class="ab-label">📢 Announcement${name?' · '+escapeHtml(String(name).slice(0,24)):''}</div><div class="ab-text">${escapeHtml(text)}</div>`;
+  document.body.appendChild(el);
+  if(_moveSoundsOn) playMoveSound('check');
+  setTimeout(()=>el.classList.add('out'),3800);
+  setTimeout(()=>el.remove(),4400);
+}
+
+/* ---------- Return by Death (passive) ---------- */
+const RBD_GIF='https://media.tenor.com/74eCtRqbTdcAAAAM/natsuki-subaru-re-zero-natsuki-subaru.gif';
+const RBD_VIDEO_ID='awnlYsvI2iQ';
+const RBD_MS=7000;
+let roomRbd=false, spectatorRbd=false, _rbdBusy=false;
+let _rbdPref=false;
+try{ _rbdPref=localStorage.getItem('chess-rbd')==='1'; }catch(e){}
+function _syncRbdToRoom(){
+  if(!roomId||!gameStarted||gameEnded||isSpectator) return;
+  if(hasAbility('rbd')&&_rbdPref&&!roomRbd){
+    roomRbd=true;
+    fbPatch(`rooms/${roomId}`,{returnByDeath:true});
+  }
+}
+function toggleRbd(){
+  if(!hasAbility('rbd')) return;
+  _rbdPref=!_rbdPref;
+  try{ localStorage.setItem('chess-rbd',_rbdPref?'1':'0'); }catch(e){}
+  if(roomId&&gameStarted&&!gameEnded){
+    roomRbd=_rbdPref;
+    fbPatch(`rooms/${roomId}`,{returnByDeath:_rbdPref});
+  }
+  refreshAdminBypassBtn();
+  showToast(_rbdPref?'💀 Return by Death is ON — every capture triggers it':'Return by Death is off',2400);
+}
+
+function triggerReturnByDeath(victim,skins,isPlayer){
+  if(!victim) return;
+  if(isPlayer) pauseTurnTimer(RBD_MS+3000+800);
+  // let the hand finish placing the piece first
+  setTimeout(()=>playReturnByDeath(victim,skins),isPlayer?780:150);
+}
+
+async function playReturnByDeath(p,skins){
+  if(_rbdBusy) return;
+  _rbdBusy=true;
+  const wasBusy=chiliFxBusy; chiliFxBusy=true;
+  const col=colorOf(p);
+  const sk=findSkin((skins&&skins[col])||'classic');
+  const kind=PIECE_NAMES[p.toLowerCase()];
+  const name=(sk&&sk.id!=='classic')?`${sk.name} ${kind}`:`${col==='w'?'White':'Black'} ${kind}`;
+  const scene=document.createElement('div');
+  scene.id='rbd-scene';
+  const mute=_moveSoundsOn?0:1;
+  scene.innerHTML=
+    '<div class="rbd-bg"></div>'+
+    '<div class="rbd-clock" aria-hidden="true"><span class="rbd-hand h1"></span><span class="rbd-hand h2"></span></div>'+
+    '<div class="rbd-bar top"><div class="rbd-title">RETURN BY DEATH</div></div>'+
+    '<div class="rbd-stage">'+
+      `<div class="rbd-gif-wrap"><img class="rbd-gif" src="${RBD_GIF}" alt="Return by Death"></div>`+
+      '<div class="rbd-piece"></div>'+
+    '</div>'+
+    `<div class="rbd-bar bottom"><div class="rbd-caption">The ${escapeHtml(name)} has died.</div></div>`+
+    '<div class="rbd-player"><div class="rbd-np">♪ now playing</div>'+
+      `<iframe src="https://www.youtube-nocookie.com/embed/${RBD_VIDEO_ID}?autoplay=1&mute=${mute}&controls=0&modestbranding=1&rel=0&playsinline=1" title="Return by Death audio" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`+
+    '<div class="rbd-skip">click to skip</div>';
+  const pieceHolder=scene.querySelector('.rbd-piece');
+  pieceHolder.appendChild(makePieceEl(p,sk));
+  pieceHolder.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove());
+  document.body.appendChild(scene);
+  let skip=false;
+  setTimeout(()=>scene.addEventListener('click',()=>{ skip=true; }),1200);
+  requestAnimationFrame(()=>scene.classList.add('show'));
+  const wait=ms=>new Promise(res=>{ const t0=performance.now(); const tick=()=>{ if(skip||performance.now()-t0>=ms) res(); else setTimeout(tick,30); }; tick(); });
+  try{
+    await wait(2600);
+    scene.querySelector('.rbd-caption').innerHTML='…and time <strong>rewinds</strong>.';
+    scene.classList.add('rewind');
+    await wait(RBD_MS-2600-600);
+    scene.classList.remove('show'); scene.classList.add('out');
+    await _sleep(600);
+  }finally{
+    scene.remove();
+    chiliFxBusy=wasBusy&&chiliFxBusy;
+    if(!wasBusy) chiliFxBusy=false;
+    _rbdBusy=false;
+  }
 }
 </script>
 
