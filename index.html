@@ -3171,6 +3171,28 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 .sb-title{text-shadow:0 0 14px #8a5cff,0 2px 6px #000}
 .sb-time{text-shadow:0 1px 4px #000}
 @media (prefers-reduced-motion:reduce){.sb-chain,.sb-hand,.sb-vignette{animation-duration:12s !important}}
+
+/* ---------- foldable admin categories ---------- */
+.admin-grid{display:flex !important;flex-direction:column;gap:6px;padding:2px 2px 8px}
+.adm-cat{border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface2) 55%,transparent);overflow:hidden}
+.adm-cat.hidden{display:none !important}
+.adm-cat-head{width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px !important;background:transparent !important;border:none !important;box-shadow:none !important;
+  color:var(--text);cursor:pointer;transform:none !important;font-size:.64rem !important;letter-spacing:2px;text-transform:uppercase;border-radius:0 !important;min-width:0}
+.adm-cat-head:hover{background:var(--gold-dim) !important}
+.adm-cat-name{flex:1;text-align:left;font-family:'Cinzel',serif;color:var(--gold-light)}
+.adm-cat-count{font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:1px;color:#ff8a3c}
+.adm-cat-count:empty{display:none}
+.adm-cat-chev{color:var(--gold);transition:transform .32s cubic-bezier(.4,0,.2,1)}
+.adm-cat.collapsed .adm-cat-chev{transform:rotate(-90deg)}
+.adm-cat-body{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .32s cubic-bezier(.4,0,.2,1),opacity .25s ease}
+.adm-cat.collapsed .adm-cat-body{grid-template-rows:0fr;opacity:0}
+.adm-cat-grid{min-height:0;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 8px 8px}
+.adm-cat.collapsed .adm-cat-grid{padding-bottom:0}
+.adm-cat-grid > button{min-width:0;width:100%;padding:9px 8px;font-size:.64rem;letter-spacing:1.1px;grid-column:auto}
+.adm-cat-grid > button:only-child{grid-column:1/-1}
+#game-subaru-btn{border-color:rgba(160,110,255,.55);color:#c9a8ff}
+.staff-bar-btns{display:flex !important;flex-direction:column;gap:6px}
+.staff-bar-btns.hidden{display:none !important}
 </style>
 </head>
 
@@ -3520,6 +3542,7 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
         <button class="ghost" id="convert-btn" onclick="toggleConvert()" style="display:none;" title="Take control of an enemy piece">🧠 Mind Control: Off</button>
         <button class="ghost" id="swap-btn" onclick="toggleSwap()" style="display:none;" title="Two of your pieces trade places">🔀 Swap: Off</button>
         <button class="ghost" id="taunt-btn" onclick="openTaunt()" style="display:none;" title="Fire emojis across both screens">🎉 Taunt</button>
+        <button class="ghost" id="game-subaru-btn" onclick="gameSubaruEdit()" style="display:none;" title="Play the SubaruEdit for everyone in this game">🎬 SubaruEdit</button>
         <button class="ghost" id="rbd-btn" onclick="toggleRbd()" style="display:none;" title="Passive: every captured piece plays a death cutscene">💀 Return by Death: Off</button>
       </div>
     </div>
@@ -3593,9 +3616,19 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
       <div id="staff-bar" class="hidden">
         <div class="staff-bar-head"><span id="staff-bar-role">🛡 Staff</span><span class="staff-bar-sub">spectating via console</span></div>
         <div class="staff-bar-btns" id="staff-bar-owner">
-          <button class="ghost" id="staff-rbd-w" onclick="staffToggleRbd('w')">💀 RbD White: Off</button>
-          <button class="ghost" id="staff-rbd-b" onclick="staffToggleRbd('b')">💀 RbD Black: Off</button>
-          <button id="staff-subaru" onclick="staffSubaruEdit()">🎬 SubaruEdit</button>
+          <div class="adm-cat" data-cat="s-rbd">
+            <button type="button" class="adm-cat-head" onclick="toggleAdmCat(this)"><span class="adm-cat-name">💀 Return by Death</span><span class="adm-cat-count"></span><span class="adm-cat-chev">▾</span></button>
+            <div class="adm-cat-body"><div class="adm-cat-grid">
+              <button class="ghost" id="staff-rbd-w" onclick="staffToggleRbd('w')">💀 RbD White: Off</button>
+              <button class="ghost" id="staff-rbd-b" onclick="staffToggleRbd('b')">💀 RbD Black: Off</button>
+            </div></div>
+          </div>
+          <div class="adm-cat" data-cat="s-media">
+            <button type="button" class="adm-cat-head" onclick="toggleAdmCat(this)"><span class="adm-cat-name">🎬 Media</span><span class="adm-cat-count"></span><span class="adm-cat-chev">▾</span></button>
+            <div class="adm-cat-body"><div class="adm-cat-grid">
+              <button id="staff-subaru" onclick="staffSubaruEdit()">🎬 SubaruEdit</button>
+            </div></div>
+          </div>
         </div>
       </div>
 
@@ -7936,7 +7969,8 @@ function refreshChiliStrikeBtn(){
   if(!hasAbility('chili')) chiliStrikeOn=false;
   if(!hasAbility('evict')) evictOn=false;
   if(!hasAbility('crown')) crownOn=false;
-  const anyAbility=(ADMIN_CFG.abilities||[]).some(a=>hasAbility(a.id));
+  // abilities that have a button in the game (rbdany only lives in the console / spectate bar)
+  const anyAbility=(ADMIN_CFG.abilities||[]).some(a=>a.id!=='rbdany'&&hasAbility(a.id));
   if(tools) tools.style.display=anyAbility?'':'none';
   const badge=document.getElementById('admin-role-badge');
   if(badge){
@@ -7957,11 +7991,13 @@ function refreshChiliStrikeBtn(){
   _setArmedBtn('convert-btn',hasAbility('convert'),convertOn,'🧠 Mind Control: '+(convertOn?'Armed':'Off'));
   _setArmedBtn('swap-btn',hasAbility('swap'),swapOn,'🔀 Swap: '+(swapOn?(_swapFirst?'Pick 2nd':'Armed'):'Off'));
   _setArmedBtn('taunt-btn',hasAbility('taunt'),false,null);
+  _setArmedBtn('game-subaru-btn',hasAbility('subaru'),false,null);
   _setArmedBtn('rbd-btn',hasAbility('rbd'),hasAbility('rbd')&&_rbdPref,'💀 Return by Death: '+(hasAbility('rbd')&&_rbdPref?'On':'Off'));
   const active=[adminBypassOn,chiliStrikeOn,evictOn,crownOn,summonOn,convertOn,swapOn,hasAbility('rbd')&&_rbdPref].filter(Boolean).length;
   const ac=document.getElementById('admin-active-count');
   if(ac) ac.textContent=active?`${active} active`:'';
   _applyAdminPanelState();
+  _applyAdmCats();
 }
 function toggleChiliStrike(){
   if(!chiliStrikeAllowed()) return;
@@ -8794,7 +8830,7 @@ function toggleRbd(){
   showToast(_rbdPref?'💀 Return by Death ON — your captured pieces come back':'Return by Death is off',2600);
 }
 
-const APP_BUILD='2026-11-18-ranks1';
+const APP_BUILD='2026-11-18-cats1';
 const RBD_AUDIO_URL='sounds/return-by-death.mp3';
 let _rbdAudio=null;
 try{ _rbdAudio=new Audio(RBD_AUDIO_URL); _rbdAudio.preload='auto'; }catch(e){}
@@ -9085,7 +9121,11 @@ function _refreshStaffBar(room){
   document.getElementById('staff-bar-role').textContent=role==='owner'?'🛡 Owner':'🛡 Moderator';
   bar.className=role==='owner'?'staff-owner':'staff-mod';
   const ownerBtns=document.getElementById('staff-bar-owner');
-  ownerBtns.classList.toggle('hidden',role!=='owner');
+  const canRbd=hasAbility('rbdany'), canSub=hasAbility('subaru');
+  ownerBtns.classList.toggle('hidden',!canRbd&&!canSub);
+  const cr=ownerBtns.querySelector('[data-cat="s-rbd"]'), cm=ownerBtns.querySelector('[data-cat="s-media"]');
+  if(cr) cr.classList.toggle('hidden',!canRbd);
+  if(cm) cm.classList.toggle('hidden',!canSub);
   const close=document.getElementById('spectate-close');
   if(close) close.textContent='Back to Console';
   if(room){
@@ -9095,9 +9135,10 @@ function _refreshStaffBar(room){
       if(b){ b.textContent=`💀 RbD ${c==='w'?'White':'Black'}: ${r[c]?'On':'Off'}`; b.classList.toggle('armed',r[c]); b.dataset.on=r[c]?'1':'0'; }
     }
   }
+  _applyAdmCats();
 }
 async function staffToggleRbd(color){
-  if(staffSpectateRole!=='owner'||!spectatorRoomId||!isOwner()) return;
+  if(!staffSpectateRole||!spectatorRoomId||!hasAbility('rbdany')) return;
   const b=document.getElementById('staff-rbd-'+color);
   const on=!(b&&b.dataset.on==='1');
   const ok=await fbPatch(`rooms/${spectatorRoomId}/returnByDeath`,{[color]:on});
@@ -9106,14 +9147,43 @@ async function staffToggleRbd(color){
   showToast(`💀 Return by Death ${on?'ON':'OFF'} for ${color==='w'?'White':'Black'}`,2200);
 }
 async function staffSubaruEdit(){
-  if(staffSpectateRole!=='owner'||!spectatorRoomId||!isOwner()) return;
-  const btn=document.getElementById('staff-subaru');
-  if(btn){ btn.disabled=true; setTimeout(()=>{ btn.disabled=false; },SUBARU_MS); }
-  const ev={id:Math.random().toString(36).slice(2,10),at:Date.now(),by:myName||'Owner'};
-  const ok=await fbPatch(`rooms/${spectatorRoomId}`,{subaruEdit:ev});
-  if(!ok){ showToast('Could not start SubaruEdit',2200); if(btn) btn.disabled=false; return; }
-  _lastSubaruId=ev.id;
-  playSubaruEdit(false);
+  if(!staffSpectateRole||!spectatorRoomId||!hasAbility('subaru')) return;
+  requestSubaruEdit(spectatorRoomId,false,document.getElementById('staff-subaru'));
+}
+function gameSubaruEdit(){
+  if(!hasAbility('subaru')||!roomId||!gameStarted||gameEnded) return;
+  requestSubaruEdit(roomId,true,document.getElementById('game-subaru-btn'));
+}
+// Only one edit can play in a room at a time. The room's subaruEdit node is
+// claimed with a conditional write (ETag), so two people pressing at the same
+// moment can't both start one.
+let _subaruRequesting=false;
+async function requestSubaruEdit(code,isPlayer,btn){
+  if(_subaruRequesting) return;
+  if(_subaruOn){ showToast('🎬 An edit is already playing',2200); return; }
+  _subaruRequesting=true;
+  if(btn) btn.disabled=true;
+  try{
+    const url=`${FB}/rooms/${code}/subaruEdit.json`;
+    const read=await fetch(url,{headers:{'X-Firebase-ETag':'true'},cache:'no-store'});
+    if(!read.ok){ showToast('Could not start SubaruEdit',2200); return; }
+    const cur=await read.json();
+    const etag=read.headers.get('ETag');
+    if(cur&&cur.at&&Date.now()-cur.at<SUBARU_MS+5000){
+      showToast('🎬 An edit is already playing in this game',2400); return;
+    }
+    const ev={id:Math.random().toString(36).slice(2,10),at:Date.now(),by:myName||'Staff'};
+    const write=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json',...(etag?{'if-match':etag}:{})},body:JSON.stringify(ev)});
+    if(write.status===412){ showToast('🎬 Someone else just started an edit',2400); return; }
+    if(!write.ok){ showToast('Could not start SubaruEdit',2200); return; }
+    _lastSubaruId=ev.id;
+    playSubaruEdit(isPlayer);
+  }catch(e){
+    showToast('Could not start SubaruEdit',2200);
+  }finally{
+    _subaruRequesting=false;
+    if(btn) setTimeout(()=>{ btn.disabled=false; },1500);
+  }
 }
 
 // Called from every poll (players and spectators). Plays once per new trigger.
@@ -9430,6 +9500,73 @@ function showRankUp(r){
   setTimeout(()=>el.classList.add('out'),3800);
   setTimeout(()=>el.remove(),4500);
 }
+
+/* ============================================================
+   FOLDABLE ADMIN CATEGORIES (in-game panel + console spectate bar)
+============================================================ */
+var ADMIN_CATEGORIES=[
+  {key:'board',  name:'♟ Board',   ids:['admin-bypass-btn','swap-btn','summon-btn','crown-btn']},
+  {key:'combat', name:'⚔ Combat',  ids:['chili-strike-btn','evict-btn','convert-btn']},
+  {key:'game',   name:'⏱ Game',    ids:['timewarp-btn','forcedraw-btn']},
+  {key:'fun',    name:'🎉 Fun',     ids:['announce-btn','taunt-btn','game-subaru-btn']},
+  {key:'passive',name:'💀 Passive', ids:['rbd-btn']}
+];
+var _ADM_ARMED_LABEL=/: (Armed|On|Pick 2nd)$/;
+var _admCatState={};
+try{ _admCatState=JSON.parse(localStorage.getItem('chess-admin-cats')||'{}')||{}; }catch(e){ _admCatState={}; }
+function _saveAdmCats(){ try{ localStorage.setItem('chess-admin-cats',JSON.stringify(_admCatState)); }catch(e){} }
+
+(function buildAdminCategories(){
+  const grid=document.querySelector('#admin-tools .admin-grid');
+  if(!grid) return;
+  const head=n=>`<button type="button" class="adm-cat-head" onclick="toggleAdmCat(this)"><span class="adm-cat-name">${n}</span><span class="adm-cat-count"></span><span class="adm-cat-chev">▾</span></button><div class="adm-cat-body"><div class="adm-cat-grid"></div></div>`;
+  ADMIN_CATEGORIES.forEach(cat=>{
+    const wrap=document.createElement('div');
+    wrap.className='adm-cat';
+    wrap.dataset.cat=cat.key;
+    wrap.innerHTML=head(cat.name);
+    const g=wrap.querySelector('.adm-cat-grid');
+    cat.ids.forEach(id=>{ const b=document.getElementById(id); if(b) g.appendChild(b); });
+    grid.appendChild(wrap);
+  });
+  // anything not listed stays usable in a final group
+  const left=[...grid.children].filter(el=>el.tagName==='BUTTON');
+  if(left.length){
+    const wrap=document.createElement('div'); wrap.className='adm-cat'; wrap.dataset.cat='other';
+    wrap.innerHTML=head('✦ Other');
+    left.forEach(b=>wrap.querySelector('.adm-cat-grid').appendChild(b));
+    grid.appendChild(wrap);
+  }
+})();
+
+function toggleAdmCat(btn){
+  const cat=btn&&btn.closest('.adm-cat');
+  if(!cat) return;
+  const key=cat.dataset.cat;
+  _admCatState[key]=!_admCatState[key];
+  _saveAdmCats();
+  _applyAdmCats();
+}
+// hide empty categories, show how many modes are switched on, apply fold state
+function _applyAdmCats(){
+  document.querySelectorAll('.adm-cat').forEach(cat=>{
+    const collapsed=!!_admCatState[cat.dataset.cat];
+    cat.classList.toggle('collapsed',collapsed);
+    const h=cat.querySelector('.adm-cat-head');
+    if(h) h.setAttribute('aria-expanded',String(!collapsed));
+    const body=cat.querySelector('.adm-cat-body');
+    if(body) body.inert=collapsed;
+    const btns=[...cat.querySelectorAll('.adm-cat-grid > button')];
+    if(cat.closest('#admin-tools')){
+      const visible=btns.filter(b=>b.style.display!=='none');
+      cat.classList.toggle('hidden',!visible.length);
+    }
+    const on=btns.filter(b=>b.style.display!=='none'&&(b.classList.contains('armed')||_ADM_ARMED_LABEL.test(b.textContent.trim()))).length;
+    const cnt=cat.querySelector('.adm-cat-count');
+    if(cnt) cnt.textContent=on?`${on} on`:'';
+  });
+}
+_applyAdmCats();
 </script>
 
 </body>

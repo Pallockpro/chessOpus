@@ -49,6 +49,10 @@ window.ADMIN_CONFIG = {
     { id:'swap',      name:'Swap',         icon:'🔀', modDefault:false,
       desc:'Pick two of your own pieces and they trade places.' },
     { id:'taunt',     name:'Taunt',        icon:'🎉', modDefault:false,
-      desc:'Fire a burst of emojis across both players\' screens.' }
+      desc:'Fire a burst of emojis across both players\' screens.' },
+    { id:'subaru',    name:'SubaruEdit',   icon:'🎬', modDefault:false,
+      desc:'Play the unskippable SubaruEdit video for everyone in a game — from inside the game or while spectating from the console.' },
+    { id:'rbdany',    name:'Return by Death (any side)', icon:'💀', modDefault:false,
+      desc:'Turn Return by Death on or off for either side of any game, from the console or while spectating.' }
   ]
 };

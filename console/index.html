@@ -218,7 +218,15 @@ async function signIn(){
 }
 async function signOut(){ try{ await auth.signOut(); }catch(e){} }
 
-let myRole='';
+let myRole='', myGrants={};
+function canDo(id){
+  if(myRole==='owner') return true;
+  if(myRole!=='mod') return false;
+  const ab=ABILITIES.find(a=>a.id===id);
+  if(!ab) return false;
+  const g=myGrants[id];
+  return (g===undefined||g===null)?!!ab.modDefault:!!g;
+}
 async function onUser(user){
   if(!user){ me=''; myRole=''; show('signin-card'); document.getElementById('signin-status').textContent=''; return; }
   const email=String(user.email||'').trim().toLowerCase();
@@ -238,6 +246,9 @@ async function onUser(user){
     return;
   }
   myRole=role;
+  // what this account may do here (owners: everything; mods: what owners granted)
+  myGrants={};
+  if(role==='mod'){ const g=await fbGet(`adminGrants/${safeKey(email)}`); myGrants=(g&&typeof g==='object')?g:{}; }
   me=role==='owner'?email:'';      // only owners can change grants / mods
   document.getElementById('me-email').textContent=user.email;
   const badge=document.getElementById('me-badge');
@@ -280,7 +291,7 @@ function renderGames(arr){
   if(!arr.length){ box.innerHTML='<div class="empty">No games are being played right now.</div>'; return; }
   box.innerHTML=arr.map(({code,r})=>{
     const rbd=_rbdOf(r);
-    const ownerCtl=myRole==='owner'?`
+    const ownerCtl=canDo('rbdany')?`
         <label class="ab mini"><input type="checkbox" ${rbd.w?'checked':''} data-code="${esc(code)}" data-color="w" onchange="setRbd(this)"><span class="sw" aria-hidden="true"></span><span class="t">💀 RbD White</span></label>
         <label class="ab mini"><input type="checkbox" ${rbd.b?'checked':''} data-code="${esc(code)}" data-color="b" onchange="setRbd(this)"><span class="sw" aria-hidden="true"></span><span class="t">💀 RbD Black</span></label>`:'';
     return `<div class="game">
@@ -298,7 +309,7 @@ function spectate(code){
   location.href='../?spectate='+encodeURIComponent(code)+'&via=console';
 }
 async function setRbd(el){
-  if(myRole!=='owner') return;
+  if(!canDo('rbdany')) return;
   const code=el.dataset.code, color=el.dataset.color, on=el.checked;
   el.disabled=true;
   const ok=await fbPatchJson(`rooms/${code}/returnByDeath`,{[color]:on});
