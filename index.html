@@ -2881,6 +2881,10 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 #eject-scene .ej-l1{font-size:clamp(1.1rem,3.6vw,2.3rem);min-height:1.3em;letter-spacing:.01em}
 #eject-scene .ej-l2{font-size:clamp(.9rem,2.4vw,1.45rem);min-height:1.3em;margin-top:.5em;opacity:.92}
 #eject-scene .ej-skip{position:absolute;right:16px;bottom:14px;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:2px;color:rgba(255,255,255,.35);text-transform:uppercase}
+
+/* paused clock during admin cutscenes */
+.timer-box.paused .t-val{color:var(--muted) !important;animation:none !important}
+.timer-box.paused .t-label::after{content:' · paused';color:var(--gold)}
 </style>
 </head>
 
@@ -4530,6 +4534,21 @@ let usernameKey=null;
 
 let moveTimeLeft={ w:MOVE_TIME, b:MOVE_TIME };
 let turnStartedAt=Date.now();
+// Pauses the clock of whoever's turn it is (used during Chili Strike / Evict cutscenes)
+let _timerPause=null;   // {start, until}
+function _settleTimerPause(){
+  if(_timerPause && Date.now()>=_timerPause.until){
+    turnStartedAt+=_timerPause.until-_timerPause.start;
+    _timerPause=null;
+  }
+}
+function pauseTurnTimer(ms){
+  _settleTimerPause();
+  const now=Date.now();
+  if(_timerPause){ _timerPause.until=Math.max(_timerPause.until,now+ms); }
+  else{ _timerPause={start:now,until:now+ms}; }
+  renderTimers();
+}
 
 let gameEnded=false;
 let heartbeatTimer=null;
@@ -5843,7 +5862,7 @@ function startGame(){
 
   lastSeq=0;
   gameStartTime=Date.now();
-  turnStartedAt=Date.now();
+  turnStartedAt=Date.now(); _timerPause=null;
 
   publishInitialState();
 
@@ -5902,8 +5921,10 @@ function startHeartbeat(){
 
 function currentRemaining(color){
   let base=Number(moveTimeLeft[color]||MOVE_TIME);
+  _settleTimerPause();
   if(G.status==='playing'&&G.turn===color&&turnStartedAt){
-    const elapsed=Math.floor((Date.now()-turnStartedAt)/1000);
+    const now=_timerPause?_timerPause.start:Date.now();
+    const elapsed=Math.floor((now-turnStartedAt)/1000);
     base=Math.max(0,base-elapsed);
   }
   return Math.max(0,Math.floor(base));
@@ -5942,7 +5963,8 @@ function renderTimers(){
     const s=currentRemaining(c);
     val.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
     box.classList.toggle('active',G.turn===c&&G.status==='playing'&&!gameEnded);
-    box.classList.toggle('urgent',s<=8&&G.turn===c&&!gameEnded);
+    box.classList.toggle('urgent',s<=8&&G.turn===c&&!gameEnded&&!_timerPause);
+    box.classList.toggle('paused',!!_timerPause&&G.turn===c&&!gameEnded);
   }
 }
 
@@ -6087,7 +6109,7 @@ function processSkip(sc){
   G.log.push({color:sc,note:'(time)'});
   G.turn=opp(sc);
   moveTimeLeft[sc]=MOVE_TIME;
-  turnStartedAt=Date.now();
+  turnStartedAt=Date.now(); _timerPause=null;
   selected=null;
   legalNow=[];
   renderBoard();
@@ -6639,7 +6661,7 @@ function initGame(){
   };
   G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
   moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME};
-  turnStartedAt=Date.now();
+  turnStartedAt=Date.now(); _timerPause=null;
   gameEnded=false;
   timeoutProcessed=false;
   drawOfferPending=false;
@@ -6742,7 +6764,7 @@ function executeMove(move,local){
   G.lastMove={fr:move.fr,fc:move.fc,tr:move.tr,tc:move.tc};
   G.turn=opp(G.turn);
 
-  turnStartedAt=Date.now();
+  turnStartedAt=Date.now(); _timerPause=null;
   selected=null;
   legalNow=[];
   moveTimeLeft[movedColor]=MOVE_TIME;
@@ -7273,6 +7295,17 @@ initTos();
 let chiliStrikeOn=false;
 let chiliFxBusy=false;
 const PIECE_NAMES={p:'Pawn',n:'Knight',b:'Bishop',r:'Rook',q:'Queen',k:'King'};
+function pieceSkinOf(p){
+  const id=(currentRoomSkins&&currentRoomSkins[colorOf(p)])||'classic';
+  return findSkin(id);
+}
+// "Chili Knight" when the piece wears a skin, otherwise "White Knight"
+function pieceDisplayName(p){
+  const sk=pieceSkinOf(p);
+  const kind=PIECE_NAMES[p.toLowerCase()];
+  if(sk&&sk.id!=='classic') return sk.name+' '+kind;
+  return (colorOf(p)==='w'?'White':'Black')+' '+kind;
+}
 
 function chiliStrikeAllowed(){
   return isSpecialUser() && getMyEquippedSkin()==='chili';
@@ -7369,6 +7402,7 @@ function applyChiliExplosion(r,c,local,kind='explode'){
       triggerGameEnd(s,ends[s][0],ends[s][1]);
     }
   };
+  pauseTurnTimer((kind==='evict'?7800:4400)+3000);
   const scene=kind==='evict'
     ? playEjectCutscene(p,sqEl)
     : playChiliCutscene(r,c,p,pieceSrc,sqEl,local);
@@ -7417,7 +7451,7 @@ const _sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function playChiliCutscene(r,c,p,pieceSrc,sqEl,local){
   chiliFxBusy=true;
   const wrap=document.getElementById('board-wrap');
-  const colorWord=colorOf(p)==='w'?'White':'Black';
+  const pName=escapeHtml(pieceDisplayName(p));
   const sqName=FILES_STR[c]+(8-r);
   const who=local?'You':escapeHtml(colorName(myColor==='w'?'b':'w'));
   try{
@@ -7429,7 +7463,7 @@ async function playChiliCutscene(r,c,p,pieceSrc,sqEl,local){
     bars.id='chili-bars';
     bars.innerHTML=
       '<div class="cine-bar top"><div class="cine-title">🌶 CHILI STRIKE 🌶</div></div>'+
-      '<div class="cine-bar bottom"><div class="cine-caption">'+who+' targeted the '+colorWord+' '+PIECE_NAMES[p.toLowerCase()]+' on '+sqName+'</div></div>';
+      '<div class="cine-bar bottom"><div class="cine-caption">'+who+' targeted the '+pName+' on '+sqName+'</div></div>';
     document.body.appendChild(ov);
     document.body.appendChild(bars);
     const fx=document.createElement('div');
@@ -7482,6 +7516,7 @@ async function playChiliCutscene(r,c,p,pieceSrc,sqEl,local){
     quads.forEach((cp,i)=>{
       const sh=document.createElement('img');
       sh.className='cine-shard'; sh.src=pieceSrc; sh.alt='';
+      { const sk=pieceSkinOf(p); const f=sk&&(sk.grad?sk.fallback:sk.filter); if(f&&f!=='none') sh.style.filter=f+' drop-shadow(0 0 6px #ff4a12)'; }
       sh.style.clipPath=cp; sh.style.webkitClipPath=cp;
       sh.style.width=sh.style.height=(size*0.86)+'px';
       sh.style.left=tx+'px'; sh.style.top=ty+'px';
@@ -7517,7 +7552,7 @@ async function playChiliCutscene(r,c,p,pieceSrc,sqEl,local){
     }
     await _sleep(450);
     wrap.classList.remove('cine-shake'); ov.classList.remove('cine-shake');
-    bars.querySelector('.cine-caption').innerHTML='💥 The '+colorWord+' '+PIECE_NAMES[p.toLowerCase()]+' was <strong>obliterated</strong>';
+    bars.querySelector('.cine-caption').innerHTML='💥 The '+pName+' was <strong>obliterated</strong>';
     await _sleep(1500);
 
     // wrap up
@@ -7802,7 +7837,7 @@ function _spaceHum(dur){
 
 async function playEjectCutscene(p,sqEl){
   chiliFxBusy=true;
-  const name=(colorOf(p)==='w'?'White':'Black')+' '+PIECE_NAMES[p.toLowerCase()];
+  const name=pieceDisplayName(p);
   const line1=`The ${name} was not The Impostor.`;
   const line2='1 Impostor remains.';
   const DUR=7200;
@@ -7815,8 +7850,9 @@ async function playEjectCutscene(p,sqEl){
     // piece (keeps the player's skin)
     const holder=scene.querySelector('.ej-piece');
     const pw=sqEl&&sqEl.querySelector('.piece-wrap');
-    if(pw){ const cl=pw.cloneNode(true); cl.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove()); cl.style.visibility=''; holder.appendChild(cl); }
-    else{ const img=document.createElement('img'); img.src=pieceUrl(p); img.className='piece-img'; holder.appendChild(img); }
+    const skinned=makePieceEl(p,pieceSkinOf(p));
+    skinned.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove());
+    holder.appendChild(skinned);
     if(pw) pw.style.visibility='hidden';
     document.body.appendChild(scene);
 
