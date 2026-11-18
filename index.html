@@ -3112,6 +3112,13 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 .ru-label{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:4px;color:var(--gold);text-transform:uppercase}
 .ru-name{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(1.3rem,5vw,2.3rem);color:#fff;margin-top:4px}
 .ru-sub{font-size:.9rem;color:var(--gold-light);margin-top:4px}
+
+#subaru-scene .sb-video{display:flex;align-items:center;justify-content:center}
+#subaru-scene .sb-video video{width:min(100vw,calc((100vh - 24vh) * 16 / 9));max-height:76vh;background:#000;box-shadow:0 0 60px rgba(140,90,255,.35);pointer-events:none}
+.sb-sound{position:absolute;left:50%;bottom:calc(12vh + 14px);transform:translateX(-50%);z-index:3;padding:10px 18px;font-size:.8rem;
+  background:linear-gradient(180deg,#8a5cff,#3d1f8f) !important;color:#fff;animation:sbPulse 1.4s ease-in-out infinite}
+.sb-sound.hidden{display:none}
+@keyframes sbPulse{50%{box-shadow:0 0 22px rgba(140,90,255,.85)}}
 </style>
 </head>
 
@@ -9069,6 +9076,30 @@ function _checkSubaruEdit(room,isPlayer){
 }
 
 let _subaruOn=false;
+
+// Phones only allow video *with sound* to start from a tap. So on the first
+// tap anywhere we "unlock" one reusable <video> element (play+pause inside the
+// gesture). Later, SubaruEdit reuses that element and can start by itself.
+const _subaruVideo=document.createElement('video');
+_subaruVideo.playsInline=true;
+_subaruVideo.setAttribute('playsinline','');
+_subaruVideo.setAttribute('webkit-playsinline','');
+_subaruVideo.preload='metadata';
+_subaruVideo.src=SUBARU_URL;
+let _subaruUnlocked=false;
+function _unlockSubaruVideo(){
+  if(_subaruUnlocked||_subaruOn) return;
+  _subaruUnlocked=true;
+  try{
+    const pr=_subaruVideo.play();
+    _subaruVideo.pause();
+    _subaruVideo.currentTime=0;
+    if(pr&&pr.catch) pr.catch(()=>{});
+  }catch(e){}
+  ['touchend','click','keydown'].forEach(ev=>document.removeEventListener(ev,_unlockSubaruVideo,true));
+}
+['touchend','click','keydown'].forEach(ev=>document.addEventListener(ev,_unlockSubaruVideo,true));
+
 function playSubaruEdit(isPlayer){
   if(_subaruOn) return;
   _subaruOn=true;
@@ -9081,46 +9112,64 @@ function playSubaruEdit(isPlayer){
   const ov=document.createElement('div');
   ov.id='subaru-scene';
   ov.innerHTML='<div class="sb-bar top"><div class="sb-title">🎬 SUBARU EDIT</div></div>'+
-    '<video playsinline preload="auto"></video>'+
+    '<div class="sb-video"></div>'+
     '<button class="sb-play hidden" type="button">▶ Tap to play</button>'+
+    '<button class="sb-sound hidden" type="button">🔊 Tap for sound</button>'+
     '<div class="sb-bar bottom"><div class="sb-time">Unskippable · <span class="sb-left">1:12</span></div></div>';
   // swallow every key while it plays (unskippable)
   const keyBlock=e=>{ e.stopPropagation(); e.preventDefault(); };
   window.addEventListener('keydown',keyBlock,true);
+
+  const v=_subaruVideo;
+  v.onpause=v.onended=v.ontimeupdate=v.onerror=null;
+  try{ v.pause(); v.currentTime=0; }catch(e){}
+  v.muted=false; v.volume=1; v.preload='auto';
+  ov.querySelector('.sb-video').appendChild(v);
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
 
-  const v=ov.querySelector('video');
   const playBtn=ov.querySelector('.sb-play');
+  const soundBtn=ov.querySelector('.sb-sound');
   const left=ov.querySelector('.sb-left');
-  v.src=SUBARU_URL;
-  v.volume=1;
   let finished=false;
   const finish=()=>{
     if(finished) return; finished=true;
     clearTimeout(safety);
     window.removeEventListener('keydown',keyBlock,true);
+    v.onpause=v.onended=v.ontimeupdate=v.onerror=null;
+    try{ v.pause(); v.currentTime=0; v.muted=false; }catch(e){}
     ov.classList.remove('show');
-    setTimeout(()=>ov.remove(),500);
+    setTimeout(()=>{ ov.remove(); },500);
     if(!wasBusy) chiliFxBusy=false;
     _subaruOn=false;
     try{ if(musicWasPlaying&&_musicAudio) _musicAudio.play().catch(()=>{}); }catch(e){}
   };
   // if the video can't load at all, don't trap anyone
   const safety=setTimeout(finish,SUBARU_MS+15000);
+
+  // 1) try with sound  2) if the browser refuses, play muted (always allowed)
+  //    and offer a one-tap unmute  3) last resort: a play button
   const tryPlay=()=>{
     const pr=v.play();
-    if(pr&&pr.catch) pr.catch(()=>{ playBtn.classList.remove('hidden'); });
+    if(!pr||!pr.catch) return;
+    pr.catch(()=>{
+      if(finished) return;
+      v.muted=true;
+      const pr2=v.play();
+      soundBtn.classList.remove('hidden');
+      if(pr2&&pr2.catch) pr2.catch(()=>{ if(!finished){ soundBtn.classList.add('hidden'); playBtn.classList.remove('hidden'); } });
+    });
   };
-  playBtn.onclick=()=>{ playBtn.classList.add('hidden'); tryPlay(); };
+  soundBtn.onclick=()=>{ v.muted=false; soundBtn.classList.add('hidden'); if(v.paused) tryPlay(); };
+  playBtn.onclick=()=>{ playBtn.classList.add('hidden'); v.muted=false; tryPlay(); };
   // can't be paused: resume if anything pauses it before the end
-  v.addEventListener('pause',()=>{ if(!finished&&!v.ended) setTimeout(()=>{ if(!finished&&!v.ended) tryPlay(); },50); });
-  v.addEventListener('timeupdate',()=>{
-    const s=Math.max(0,Math.ceil((v.duration||72)-v.currentTime));
-    left.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-  });
-  v.addEventListener('ended',finish);
-  v.addEventListener('error',()=>{ showToast('Could not load the video',2500); setTimeout(finish,1500); });
+  v.onpause=()=>{ if(!finished&&!v.ended) setTimeout(()=>{ if(!finished&&!v.ended&&v.paused) v.play().catch(()=>{}); },60); };
+  v.ontimeupdate=()=>{
+    const sLeft=Math.max(0,Math.ceil((v.duration||72)-v.currentTime));
+    left.textContent=`${Math.floor(sLeft/60)}:${String(sLeft%60).padStart(2,'0')}`;
+  };
+  v.onended=finish;
+  v.onerror=()=>{ showToast('Could not load the video',2500); setTimeout(finish,1500); };
   tryPlay();
 }
 
