@@ -43,6 +43,12 @@ window.ADMIN_CONFIG = {
     { id:'announce',  name:'Announce',     icon:'📢', modDefault:false,
       desc:'Flash a big announcement banner on both players\' screens.' },
     { id:'rbd',       name:'Return by Death', icon:'💀', modDefault:false,
-      desc:'Passive: while on, every captured piece plays a death cutscene for everyone in the game, spectators included.' }
+      desc:'Passive: while on, any of YOUR pieces that get captured come back after a death cutscene (everyone in the game sees it). Pieces you capture stay dead.' },
+    { id:'convert',   name:'Mind Control', icon:'🧠', modDefault:false,
+      desc:'Take control of one enemy piece (not the king) — it joins your side.' },
+    { id:'swap',      name:'Swap',         icon:'🔀', modDefault:false,
+      desc:'Pick two of your own pieces and they trade places.' },
+    { id:'taunt',     name:'Taunt',        icon:'🎉', modDefault:false,
+      desc:'Fire a burst of emojis across both players\' screens.' }
   ]
 };

@@ -3002,6 +3002,32 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 @keyframes rbdRevive{0%{transform:scale(.8);opacity:.55;filter:grayscale(.6)}60%{transform:scale(1.18);opacity:1;filter:drop-shadow(0 0 22px #c58bff) brightness(1.3)}100%{transform:scale(1.05);opacity:1;filter:drop-shadow(0 0 14px rgba(180,90,255,.8))}}
 .revive-fx .crown-ring{border-color:#b06bff;box-shadow:0 0 18px #9b4dff}
 .revive-fx .crown-icon{color:#e2c4ff;font-weight:700;text-shadow:0 0 10px #9b4dff}
+
+/* ---------- Mind Control / Swap / Taunt ---------- */
+#convert-btn{grid-column:1/-1;border-color:rgba(255,110,190,.5);color:#ff9ad3}
+#convert-btn.armed{color:#fff;border-color:#ff6ec4;background:linear-gradient(180deg,#d6418f,#7a1a52);box-shadow:0 0 16px rgba(255,110,196,.55)}
+#swap-btn{border-color:rgba(120,230,170,.5);color:#8ff0bd}
+#swap-btn.armed{color:#06281a;border-color:#7ff0b6;background:linear-gradient(180deg,#9ff7c9,#37c27e);box-shadow:0 0 16px rgba(110,230,160,.5)}
+#taunt-btn{border-color:rgba(255,220,90,.5);color:#ffe27a}
+#board.convert-armed .sq{cursor:crosshair}
+#board.convert-armed .sq:has(.piece-wrap):hover::before{background:rgba(255,110,196,.2);outline:2px dashed rgba(255,110,196,.9);outline-offset:-4px}
+#board.swap-armed .sq{cursor:pointer}
+#board.swap-armed .sq:has(.piece-wrap):hover::before{background:rgba(110,230,160,.18);outline:2px dashed rgba(110,230,160,.9);outline-offset:-4px}
+.sq.swap-first{box-shadow:inset 0 0 0 4px #7ff0b6,0 0 16px rgba(110,230,160,.7) !important}
+.convert-fx .crown-ring{border-color:#ff6ec4;box-shadow:0 0 18px #ff6ec4}
+.swap-fx .crown-ring{border-color:#7ff0b6;box-shadow:0 0 18px #37c27e}
+#taunt-modal{display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px}
+#taunt-modal.show{display:flex}
+#taunt-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;animation:popIn .2s ease;max-width:360px}
+#taunt-box h3{font-family:'Cinzel',serif;color:var(--gold);letter-spacing:2px;font-size:.9rem;margin-bottom:12px}
+#taunt-choices{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.taunt-choice{font-size:1.7rem;padding:8px;background:var(--surface2) !important;border:1px solid var(--border);box-shadow:none !important;color:inherit;letter-spacing:0}
+.taunt-choice:hover{border-color:var(--gold)}
+.taunt-layer{position:fixed;inset:0;z-index:7100;pointer-events:none;overflow:hidden}
+.taunt-layer span{position:absolute;bottom:-60px;animation:tauntRise linear forwards;opacity:0;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+@keyframes tauntRise{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:1}85%{opacity:1}100%{transform:translate(var(--drift),-115vh) rotate(var(--spin));opacity:0}}
+.taunt-big{position:absolute;left:50%;top:45%;font-size:min(30vmin,220px);transform:translate(-50%,-50%) scale(0);animation:tauntBig 1.6s cubic-bezier(.34,1.56,.64,1) forwards;filter:drop-shadow(0 10px 30px rgba(0,0,0,.5))}
+@keyframes tauntBig{0%{transform:translate(-50%,-50%) scale(0) rotate(-20deg);opacity:0}30%{transform:translate(-50%,-50%) scale(1.1) rotate(6deg);opacity:1}70%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1}100%{transform:translate(-50%,-60%) scale(.9);opacity:0}}
 </style>
 </head>
 
@@ -3337,8 +3363,19 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
     <button class="ghost" id="forcedraw-btn" onclick="useForceDraw()" style="display:none;" title="End the game as a draw">🤝 Force Draw</button>
         <button class="ghost" id="summon-btn" onclick="toggleSummon()" style="display:none;" title="Place a new piece on an empty square">✨ Summon: Off</button>
         <button class="ghost" id="announce-btn" onclick="useAnnounce()" style="display:none;" title="Show a banner on both screens">📢 Announce</button>
+        <button class="ghost" id="convert-btn" onclick="toggleConvert()" style="display:none;" title="Take control of an enemy piece">🧠 Mind Control: Off</button>
+        <button class="ghost" id="swap-btn" onclick="toggleSwap()" style="display:none;" title="Two of your pieces trade places">🔀 Swap: Off</button>
+        <button class="ghost" id="taunt-btn" onclick="openTaunt()" style="display:none;" title="Fire emojis across both screens">🎉 Taunt</button>
         <button class="ghost" id="rbd-btn" onclick="toggleRbd()" style="display:none;" title="Passive: every captured piece plays a death cutscene">💀 Return by Death: Off</button>
       </div>
+    </div>
+  </div>
+
+  <div id="taunt-modal" role="dialog" aria-modal="true" aria-label="Choose a taunt">
+    <div id="taunt-box">
+      <h3>🎉 Taunt</h3>
+      <div id="taunt-choices"></div>
+      <button class="ghost" onclick="closeTaunt()">Cancel</button>
     </div>
   </div>
 
@@ -6006,7 +6043,7 @@ function startGame(){
   gameStarted=true;
   gameEnded=false;
   _lastRoomSkinSig=null;
-  roomRbd=false;
+  roomRbd={w:false,b:false};
   _buildWarned=false; _buildCheckFrom=Date.now()+6000;
   fbPatch(`rooms/${roomId}/build`,{[myColor]:APP_BUILD});
   playerNames={ w:'', b:'' };
@@ -6169,7 +6206,7 @@ async function pollMoves(){
       return;
     }
 
-    roomRbd=!!room.returnByDeath;
+    roomRbd=_normRbd(room.returnByDeath);
     _checkOpponentBuild(room);
     if(room.skins){
       currentRoomSkins = {
@@ -6229,6 +6266,12 @@ async function pollMoves(){
         applyTimeWarp(md.color,false);
       }else if(md&&md.crown){
         applyCrown(md.r,md.c,false);
+      }else if(md&&md.convert){
+        applyConvert(md.r,md.c,false);
+      }else if(md&&md.swap){
+        applySwap(md.a,md.b,false);
+      }else if(md&&md.taunt){
+        showTaunt(md.taunt);
       }else if(md&&md.summon){
         applySummon(md.r,md.c,md.piece,false);
       }else if(md&&md.announce){
@@ -6472,15 +6515,23 @@ function renderSpectatorRoom(room){
     // Return by Death for spectators: a new capture since the last poll
     const lm=spectatorState.lastMove, n=spectatorState.log.length;
     let specVictim=null;
-    if(spectatorRbd&&_prevSpec&&lm&&n===_prevSpec.log.length+1){
+    if(_prevSpec&&lm&&n===_prevSpec.log.length+1){
       const note=String((spectatorState.log[n-1]||{}).note||'');
+      const nb=spectatorState.board;
       if(note.includes('x')){
-        specVictim=_prevSpec.board?.[lm.tr]?.[lm.tc];
-        if(specVictim){
-          _rbdOverride={r:lm.tr,c:lm.tc,piece:specVictim,shown:_prevSpec.board?.[lm.fr]?.[lm.fc]||null,mode:'spec'};
+        const v=_prevSpec.board?.[lm.tr]?.[lm.tc];
+        if(v){
+          // revived = the captured piece is still standing on its square
+          if(nb?.[lm.tr]?.[lm.tc]===v){
+            specVictim=v;
+            _rbdOverride={r:lm.tr,c:lm.tc,piece:v,shown:_prevSpec.board?.[lm.fr]?.[lm.fc]||null,mode:'spec'};
+          }
         }else{
-          specVictim=_prevSpec.turn==='w'?'p':'P';
-          _rbdOverride={r:lm.fr,c:lm.tc,piece:specVictim,shown:null,mode:'spec'};
+          const pawn=_prevSpec.turn==='w'?'p':'P';
+          if(nb?.[lm.fr]?.[lm.tc]===pawn){
+            specVictim=pawn;
+            _rbdOverride={r:lm.fr,c:lm.tc,piece:pawn,shown:null,mode:'spec'};
+          }
         }
       }
     }
@@ -6978,7 +7029,8 @@ function executeMove(move,local){
   // Return by Death: the captured piece comes back on the square it died on,
   // replacing whatever is standing there. The mover decides (and tells the
   // opponent) whether it was on, so both boards always match.
-  const _rbdActive=local?!!roomRbd:!!move.rbd;
+  // only the side that has it switched on gets its pieces back
+  const _rbdActive=local?!!(_victim&&roomRbd[colorOf(_victim)]):!!move.rbd;
   let _revive=null;
   if(isCapture&&_victim&&_rbdActive){
     const vr=move.isEnPassant?move.fr:move.tr, vc=move.tc;
@@ -7067,6 +7119,14 @@ function handleSquareClick(r,c){
     summonAt(r,c);
     return;
   }
+  if(convertActive()){
+    if(G.board[r][c]) convertPiece(r,c);
+    return;
+  }
+  if(swapActive()){
+    swapClick(r,c);
+    return;
+  }
 
   const p=G.board[r][c];
 
@@ -7146,6 +7206,8 @@ function renderBoard(){
   boardEl.classList.toggle('evict-armed',evictActive());
   boardEl.classList.toggle('crown-armed',crownActive());
   boardEl.classList.toggle('summon-armed',summonActive());
+  boardEl.classList.toggle('convert-armed',convertActive());
+  boardEl.classList.toggle('swap-armed',swapActive());
 
   const flip=myColor==='b';
   const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
@@ -7204,6 +7266,9 @@ function renderBoard(){
   }
   _applyChiliScorch();
   _applyMoveAnimHide();
+  if(typeof _swapFirst!=='undefined'&&_swapFirst&&swapActive()){
+    boardEl.querySelector(`.sq[data-r="${_swapFirst[0]}"][data-c="${_swapFirst[1]}"]`)?.classList.add('swap-first');
+  }
 }
 
 
@@ -7557,6 +7622,8 @@ function _disarmAll(except){
   if(except!=='evict') evictOn=false;
   if(except!=='crown') crownOn=false;
   if(except!=='summon') summonOn=false;
+  if(except!=='convert') convertOn=false;
+  if(except!=='swap'){ swapOn=false; _swapFirst=null; }
 }
 function _setArmedBtn(id,show,on,label){
   const b=document.getElementById(id);
@@ -7586,8 +7653,13 @@ function refreshChiliStrikeBtn(){
   if(!hasAbility('summon')) summonOn=false;
   _setArmedBtn('summon-btn',hasAbility('summon'),summonOn,'✨ Summon: '+(summonOn?'Armed':'Off'));
   _setArmedBtn('announce-btn',hasAbility('announce'),false,null);
+  if(!hasAbility('convert')) convertOn=false;
+  if(!hasAbility('swap')){ swapOn=false; _swapFirst=null; }
+  _setArmedBtn('convert-btn',hasAbility('convert'),convertOn,'🧠 Mind Control: '+(convertOn?'Armed':'Off'));
+  _setArmedBtn('swap-btn',hasAbility('swap'),swapOn,'🔀 Swap: '+(swapOn?(_swapFirst?'Pick 2nd':'Armed'):'Off'));
+  _setArmedBtn('taunt-btn',hasAbility('taunt'),false,null);
   _setArmedBtn('rbd-btn',hasAbility('rbd'),hasAbility('rbd')&&_rbdPref,'💀 Return by Death: '+(hasAbility('rbd')&&_rbdPref?'On':'Off'));
-  const active=[adminBypassOn,chiliStrikeOn,evictOn,crownOn,summonOn,hasAbility('rbd')&&_rbdPref].filter(Boolean).length;
+  const active=[adminBypassOn,chiliStrikeOn,evictOn,crownOn,summonOn,convertOn,swapOn,hasAbility('rbd')&&_rbdPref].filter(Boolean).length;
   const ac=document.getElementById('admin-active-count');
   if(ac) ac.textContent=active?`${active} active`:'';
   _applyAdminPanelState();
@@ -7607,6 +7679,7 @@ function chiliStrike(r,c){
   const p=G.board[r][c];
   if(!p) return;
   if(p.toLowerCase()==='k'){ showToast('Kings are immune to chili 🌶',2200); return; }
+  if(!_kingSafeOrWarn(b=>{ b[r][c]=null; })) return;
   applyChiliExplosion(r,c,true);
 }
 
@@ -7626,6 +7699,7 @@ function chiliEvict(r,c){
   const p=G.board[r][c];
   if(!p) return;
   if(p.toLowerCase()==='k'){ showToast('The King has an alibi 👑',2200); return; }
+  if(!_kingSafeOrWarn(b=>{ b[r][c]=null; })) return;
   applyChiliExplosion(r,c,true,'evict');
 }
 
@@ -8193,12 +8267,52 @@ function toggleCrown(){
   renderBoard();
   if(crownOn) showToast('👑 Coronation armed — click one of your pieces',2200);
 }
+// Board-editing abilities are used on your own turn, so they must never leave the
+// enemy king attacked (that would let you capture the king next).
+function _keepsEnemyKingSafe(mutate){
+  const b=G.board.map(row=>row.slice());
+  mutate(b);
+  const k=findKing(b,opp(myColor));
+  if(!k) return false;
+  return !isAttacked(b,k[0],k[1],myColor);
+}
+function _kingSafeOrWarn(mutate){
+  if(_keepsEnemyKingSafe(mutate)) return true;
+  showToast('Not allowed — that would leave their king in check',2400);
+  return false;
+}
+function _revokeCastlingAt(r,c){
+  if(r===7&&c===4){ G.castling.wK=false; }
+  if(r===7&&c===0) G.castling.wQR=false;
+  if(r===7&&c===7) G.castling.wKR=false;
+  if(r===0&&c===4){ G.castling.bK=false; }
+  if(r===0&&c===0) G.castling.bQR=false;
+  if(r===0&&c===7) G.castling.bKR=false;
+}
+function _afterBoardEdit(){
+  G.halfClock=0;
+  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
+  G.status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
+  selected=null; legalNow=[];
+  renderBoard(); updateUI(); renderTimers();
+}
+function _squareFx(r,c,cls,icon){
+  const sq=document.querySelector(`#board .sq[data-r="${r}"][data-c="${c}"]`);
+  if(!sq) return;
+  const fx=document.createElement('div');
+  fx.className='crown-fx '+cls;
+  fx.innerHTML=`<span class="crown-ring"></span><span class="crown-ring r2"></span><span class="crown-icon">${icon}</span>`;
+  sq.appendChild(fx);
+  setTimeout(()=>fx.remove(),1700);
+}
+
 function crownPiece(r,c){
   if(!crownActive()||chiliFxBusy||gameEnded) return;
   const p=G.board[r][c];
   if(!p) return;
   if(colorOf(p)!==myColor){ showToast('You can only crown your own pieces',2000); return; }
   if('kq'.includes(p.toLowerCase())){ showToast('That piece is already royalty 👑',2000); return; }
+  if(!_kingSafeOrWarn(b=>{ b[r][c]=myColor==='w'?'Q':'q'; })) return;
   applyCrown(r,c,true);
 }
 function applyCrown(r,c,local){
@@ -8299,7 +8413,13 @@ function summonAt(r,c){
     const b=document.createElement('button');
     b.type='button'; b.className='summon-choice'; b.title=PIECE_NAMES[t];
     b.appendChild(makePieceEl(pc,findSkin(currentRoomSkins[myColor]||'classic')));
-    b.onclick=()=>{ closeSummonPicker(); if(_summonSq&&!G.board[_summonSq[0]][_summonSq[1]]) applySummon(_summonSq[0],_summonSq[1],pc,true); };
+    b.onclick=()=>{
+      closeSummonPicker();
+      if(!_summonSq||G.board[_summonSq[0]][_summonSq[1]]) return;
+      const [sr,sc]=_summonSq;
+      if(!_kingSafeOrWarn(bd=>{ bd[sr][sc]=pc; })) return;
+      applySummon(sr,sc,pc,true);
+    };
     box.appendChild(b);
   });
   document.getElementById('summon-modal').classList.add('show');
@@ -8351,14 +8471,16 @@ function showAnnouncement(text,name){
 const RBD_GIF='https://media.tenor.com/74eCtRqbTdcAAAAM/natsuki-subaru-re-zero-natsuki-subaru.gif';
 const RBD_MS=6400;            // total cutscene length (the sound effect is ~4.1s)
 const RBD_BEAT_DIE=2300, RBD_BEAT_REWIND=1700;
-var roomRbd=false, spectatorRbd=false, _rbdBusy=false;
+var roomRbd={w:false,b:false}, spectatorRbd=false, _rbdBusy=false;
+// room.returnByDeath = { w:bool, b:bool } — which side's pieces come back when captured
+function _normRbd(v){ return (v&&typeof v==='object')?{w:!!v.w,b:!!v.b}:{w:false,b:false}; }
 let _rbdPref=false;
 try{ _rbdPref=localStorage.getItem('chess-rbd')==='1'; }catch(e){}
 function _syncRbdToRoom(){
   if(!roomId||!gameStarted||gameEnded||isSpectator) return;
-  if(hasAbility('rbd')&&_rbdPref&&!roomRbd){
-    roomRbd=true;
-    fbPatch(`rooms/${roomId}`,{returnByDeath:true});
+  if(hasAbility('rbd')&&_rbdPref&&!roomRbd[myColor]){
+    roomRbd={...roomRbd,[myColor]:true};
+    fbPatch(`rooms/${roomId}/returnByDeath`,{[myColor]:true});
   }
 }
 function toggleRbd(){
@@ -8366,14 +8488,14 @@ function toggleRbd(){
   _rbdPref=!_rbdPref;
   try{ localStorage.setItem('chess-rbd',_rbdPref?'1':'0'); }catch(e){}
   if(roomId&&gameStarted&&!gameEnded){
-    roomRbd=_rbdPref;
-    fbPatch(`rooms/${roomId}`,{returnByDeath:_rbdPref});
+    roomRbd={...roomRbd,[myColor]:_rbdPref};
+    fbPatch(`rooms/${roomId}/returnByDeath`,{[myColor]:_rbdPref});
   }
   refreshAdminBypassBtn();
-  showToast(_rbdPref?'💀 Return by Death is ON — every capture triggers it':'Return by Death is off',2400);
+  showToast(_rbdPref?'💀 Return by Death ON — your captured pieces come back':'Return by Death is off',2600);
 }
 
-const APP_BUILD='2026-11-18-rbd2';
+const APP_BUILD='2026-11-18-rbd3';
 const RBD_AUDIO_URL='sounds/return-by-death.mp3';
 let _rbdAudio=null;
 try{ _rbdAudio=new Audio(RBD_AUDIO_URL); _rbdAudio.preload='auto'; }catch(e){}
@@ -8508,6 +8630,129 @@ function _checkOpponentBuild(room){
     _buildWarned=true;
     showToast('⚠ Opponent is on a different version — both refresh',6000);
   }
+}
+
+/* ============================================================
+   MORE OWNER ABILITIES: Mind Control, Swap, Taunt
+============================================================ */
+var convertOn=false, swapOn=false, _swapFirst=null;
+
+/* ---------- Mind Control ---------- */
+function convertActive(){ return convertOn && hasAbility('convert'); }
+function toggleConvert(){
+  if(!hasAbility('convert')) return;
+  convertOn=!convertOn;
+  if(convertOn) _disarmAll('convert');
+  selected=null; legalNow=[];
+  refreshAdminBypassBtn(); renderBoard();
+  if(convertOn) showToast('🧠 Mind Control armed — click an enemy piece',2200);
+}
+function convertPiece(r,c){
+  if(!convertActive()||chiliFxBusy||gameEnded) return;
+  const p=G.board[r][c];
+  if(!p) return;
+  if(colorOf(p)===myColor){ showToast('That piece is already yours',1800); return; }
+  if(p.toLowerCase()==='k'){ showToast('The King resists mind control 👑',2200); return; }
+  const mine=myColor==='w'?p.toUpperCase():p.toLowerCase();
+  if(!_kingSafeOrWarn(b=>{ b[r][c]=mine; })) return;
+  applyConvert(r,c,true);
+}
+function applyConvert(r,c,local){
+  if(gameEnded) return;
+  const p=G.board[r]?.[c];
+  if(!p||p.toLowerCase()==='k') return;
+  const before=pieceDisplayName(p);
+  const flipped=colorOf(p)==='w'?p.toLowerCase():p.toUpperCase();
+  G.board[r][c]=flipped;
+  _revokeCastlingAt(r,c);
+  if(local) sendMoveData({convert:true,r,c,piece:p,color:myColor}).catch(()=>{});
+  _afterBoardEdit();
+  _squareFx(r,c,'convert-fx','🧠');
+  if(_moveSoundsOn) playMoveSound('check');
+  showToast(`🧠 The ${before} switched sides`,2600);
+}
+
+/* ---------- Swap ---------- */
+function swapActive(){ return swapOn && hasAbility('swap'); }
+function toggleSwap(){
+  if(!hasAbility('swap')) return;
+  swapOn=!swapOn; _swapFirst=null;
+  if(swapOn) _disarmAll('swap');
+  selected=null; legalNow=[];
+  refreshAdminBypassBtn(); renderBoard();
+  if(swapOn) showToast('🔀 Swap armed — click two of your pieces',2200);
+}
+function swapClick(r,c){
+  if(!swapActive()||chiliFxBusy||gameEnded) return;
+  const p=G.board[r][c];
+  if(!p||colorOf(p)!==myColor){ showToast('Pick one of your own pieces',1800); return; }
+  if(!_swapFirst){ _swapFirst=[r,c]; refreshAdminBypassBtn(); renderBoard(); return; }
+  const [ar,ac]=_swapFirst;
+  if(ar===r&&ac===c){ _swapFirst=null; refreshAdminBypassBtn(); renderBoard(); return; }
+  const a=G.board[ar][ac], b=p;
+  // pawns can't land on the first or last rank
+  if((a.toLowerCase()==='p'&&(r===0||r===7))||(b.toLowerCase()==='p'&&(ar===0||ar===7))){
+    showToast("A pawn can't go on the back rank",2000); return;
+  }
+  // your own king must not end up in check either
+  const bd=G.board.map(x=>x.slice()); bd[ar][ac]=b; bd[r][c]=a;
+  const myK=findKing(bd,myColor);
+  if(myK&&isAttacked(bd,myK[0],myK[1],opp(myColor))){ showToast('That would put your king in check',2200); return; }
+  if(!_kingSafeOrWarn(x=>{ x[ar][ac]=b; x[r][c]=a; })) return;
+  _swapFirst=null;
+  applySwap([ar,ac],[r,c],true);
+}
+function applySwap(A,B,local){
+  if(gameEnded||!Array.isArray(A)||!Array.isArray(B)) return;
+  const [ar,ac]=A,[br,bc]=B;
+  const a=G.board[ar]?.[ac], b=G.board[br]?.[bc];
+  if(!a||!b||colorOf(a)!==colorOf(b)) return;
+  G.board[ar][ac]=b; G.board[br][bc]=a;
+  _revokeCastlingAt(ar,ac); _revokeCastlingAt(br,bc);
+  if(local) sendMoveData({swap:true,a:[ar,ac],b:[br,bc],color:myColor}).catch(()=>{});
+  _afterBoardEdit();
+  _squareFx(ar,ac,'swap-fx','🔀'); _squareFx(br,bc,'swap-fx','🔀');
+  if(_moveSoundsOn) playMoveSound('move');
+  showToast(`🔀 ${pieceDisplayName(a)} and ${pieceDisplayName(b)} traded places`,2600);
+}
+
+/* ---------- Taunt ---------- */
+const TAUNTS=['🔥','😂','😎','👑','💀','🌶','🤡','🫡'];
+function openTaunt(){
+  if(!hasAbility('taunt')||!gameStarted||gameEnded) return;
+  const box=document.getElementById('taunt-choices');
+  box.innerHTML='';
+  TAUNTS.forEach(e=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='taunt-choice'; b.textContent=e;
+    b.onclick=()=>{ closeTaunt(); sendMoveData({taunt:e,color:myColor}).catch(()=>{}); showTaunt(e); };
+    box.appendChild(b);
+  });
+  document.getElementById('taunt-modal').classList.add('show');
+}
+function closeTaunt(){ document.getElementById('taunt-modal').classList.remove('show'); }
+function showTaunt(e){
+  if(!TAUNTS.includes(e)) return;
+  const layer=document.createElement('div');
+  layer.className='taunt-layer';
+  const n=window.innerWidth<620?18:30;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('span');
+    s.textContent=e;
+    s.style.left=(Math.random()*100)+'%';
+    s.style.fontSize=(22+Math.random()*34)+'px';
+    s.style.animationDelay=(Math.random()*0.9).toFixed(2)+'s';
+    s.style.animationDuration=(2.2+Math.random()*1.4).toFixed(2)+'s';
+    s.style.setProperty('--drift',((Math.random()-.5)*160).toFixed(0)+'px');
+    s.style.setProperty('--spin',((Math.random()-.5)*120).toFixed(0)+'deg');
+    layer.appendChild(s);
+  }
+  const big=document.createElement('div');
+  big.className='taunt-big'; big.textContent=e;
+  layer.appendChild(big);
+  document.body.appendChild(layer);
+  if(_moveSoundsOn) playMoveSound('check');
+  setTimeout(()=>layer.remove(),4200);
 }
 </script>
 
