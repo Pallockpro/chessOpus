@@ -3193,6 +3193,10 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 #game-subaru-btn{border-color:rgba(160,110,255,.55);color:#c9a8ff}
 .staff-bar-btns{display:flex !important;flex-direction:column;gap:6px}
 .staff-bar-btns.hidden{display:none !important}
+
+/* hide (and stop painting) everything behind a full-screen cutscene */
+html.scene-cover body > *:not(.fullscreen-scene):not(#toast):not(script){visibility:hidden !important}
+html.scene-cover body > *:not(.fullscreen-scene) *{animation-play-state:paused !important}
 </style>
 </head>
 
@@ -8505,6 +8509,21 @@ function _spaceHum(dur){
   }catch(e){ return null; }
 }
 
+
+/* While a full-screen cutscene is up, hide the page underneath so the browser
+   stops painting the board, animated skins, chat and music player behind it
+   (that was making long scenes like SubaruEdit stutter and freeze). */
+var _coverCount=0;
+function coverPage(){
+  let released=false;
+  const t=setTimeout(()=>{ if(released) return; _coverCount++; document.documentElement.classList.add('scene-cover'); },480);
+  return ()=>{
+    if(released) return; released=true;
+    clearTimeout(t);
+    _coverCount=Math.max(0,_coverCount-1);
+    if(!_coverCount) document.documentElement.classList.remove('scene-cover');
+  };
+}
 async function playEjectCutscene(p,sqEl){
   chiliFxBusy=true;
   const name=pieceDisplayName(p);
@@ -8514,6 +8533,8 @@ async function playEjectCutscene(p,sqEl){
   let skip=false, raf=0;
   const scene=document.createElement('div');
   scene.id='eject-scene';
+  scene.classList.add('fullscreen-scene');
+  const uncover=coverPage();
   scene.innerHTML='<canvas class="ej-stars"></canvas><div class="ej-piece"></div>'+
     '<div class="ej-text"><div class="ej-l1"></div><div class="ej-l2"></div></div><div class="ej-skip">click to skip</div>';
   try{
@@ -8579,9 +8600,11 @@ async function playEjectCutscene(p,sqEl){
     const left=Math.max(0,(DUR-250)-(fly.currentTime||0));
     await wait(Math.min(left,2600));
     fly.cancel();
+    uncover();
     scene.classList.remove('show');
     await _sleep(550);
   }finally{
+    uncover();
     cancelAnimationFrame(raf);
     scene.remove();
     chiliFxBusy=false;
@@ -8879,6 +8902,7 @@ async function _runRbdQueue(){
 }
 
 async function playReturnByDeath(p,skins){
+  let uncover=()=>{};
   const wasBusy=chiliFxBusy;
   chiliFxBusy=true;
   let scene=null;
@@ -8889,6 +8913,8 @@ async function playReturnByDeath(p,skins){
     const name=(sk&&sk.id!=='classic')?`${sk.name} ${kind}`:`${col==='w'?'White':'Black'} ${kind}`;
     scene=document.createElement('div');
     scene.id='rbd-scene';
+    scene.classList.add('fullscreen-scene');
+    uncover=coverPage();
     scene.innerHTML=
       '<div class="rbd-bg"></div>'+
       '<div class="rbd-clock" aria-hidden="true"><span class="rbd-hand h1"></span><span class="rbd-hand h2"></span></div>'+
@@ -8919,9 +8945,11 @@ async function playReturnByDeath(p,skins){
     scene.classList.add('revived');
     await wait(RBD_MS-RBD_BEAT_DIE-RBD_BEAT_REWIND-500);
     if(skip) _stopRbdAudio();
+    uncover();
     scene.classList.remove('show'); scene.classList.add('out');
     await _sleep(500);
   }finally{
+    uncover();
     if(scene) scene.remove();
     _duckMusic(false);
     if(!wasBusy) chiliFxBusy=false;
@@ -9324,6 +9352,8 @@ function playSubaruEdit(isPlayer){
 
   const ov=document.createElement('div');
   ov.id='subaru-scene';
+  ov.classList.add('fullscreen-scene');
+  const uncover=coverPage();
   ov.innerHTML='<div class="sb-bar top"><div class="sb-title">🎬 SUBARU EDIT</div></div>'+
     '<div class="sb-fx-layer" aria-hidden="true"></div>'+
     '<div class="sb-video"></div>'+
@@ -9365,6 +9395,7 @@ function playSubaruEdit(isPlayer){
     window.removeEventListener('pageshow',onFocus);
     v.onpause=v.onended=v.ontimeupdate=v.onerror=v.onplaying=null;
     try{ v.pause(); v.currentTime=0; v.muted=false; }catch(e){}
+    uncover();
     ov.classList.remove('show');
     setTimeout(()=>{ try{ stopFx(); }catch(e){} ov.remove(); },500);
     if(!wasBusy) chiliFxBusy=false;
