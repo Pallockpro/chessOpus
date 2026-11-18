@@ -6204,10 +6204,12 @@ function startHeartbeat(){
    CLOCK
 ============================================================ */
 
+// The game is still going while a king is in check (status 'check').
+function gameLive(){ return !!G&&(G.status==='playing'||G.status==='check'); }
 function currentRemaining(color){
   let base=Number(moveTimeLeft[color]||MOVE_TIME);
   _settleTimerPause();
-  if(G.status==='playing'&&G.turn===color&&turnStartedAt){
+  if(gameLive()&&G.turn===color&&turnStartedAt){
     const now=_timerPause?_timerPause.start:Date.now();
     const elapsed=Math.floor((now-turnStartedAt)/1000);
     base=Math.max(0,base-elapsed);
@@ -6222,7 +6224,7 @@ function startMoveTimer(){
 }
 
 async function checkClock(){
-  if(gameEnded||!G||G.status!=='playing') return;
+  if(gameEnded||!G||!gameLive()) return;
   const current=G.turn;
   const remaining=currentRemaining(current);
   renderTimers();
@@ -6247,7 +6249,7 @@ function renderTimers(){
     if(!box||!val) continue;
     const s=currentRemaining(c);
     val.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-    box.classList.toggle('active',G.turn===c&&G.status==='playing'&&!gameEnded);
+    box.classList.toggle('active',G.turn===c&&gameLive()&&!gameEnded);
     box.classList.toggle('urgent',s<=8&&G.turn===c&&!gameEnded&&!_timerPause);
     box.classList.toggle('paused',!!_timerPause&&G.turn===c&&!gameEnded);
   }
@@ -6400,7 +6402,7 @@ async function sendMoveData(data){
 }
 
 async function skipTurn(sc){
-  if(gameEnded||G.status!=='playing'||G.turn!==sc||timeoutProcessed) return;
+  if(gameEnded||!gameLive()||G.turn!==sc||timeoutProcessed) return;
   timeoutProcessed=true;
   await broadcastEnd(opp(sc),`${colorName(sc)} ran out of time`);
   triggerGameEnd('timeout',opp(sc),`${colorName(sc)} ran out of time`);
@@ -6783,7 +6785,7 @@ function leaveSpectator(){
 ============================================================ */
 
 async function offerDraw(){
-  if(gameEnded||G.status!=='playing') return;
+  if(gameEnded||!gameLive()) return;
   if(drawOfferPending){ showToast('Draw offer already sent.'); return; }
   drawOfferPending=true;
   await sendMoveData({drawOffer:true,color:myColor});
@@ -6791,7 +6793,7 @@ async function offerDraw(){
 }
 
 function handleDrawOffer(){
-  if(gameEnded||G.status!=='playing') return;
+  if(gameEnded||!gameLive()) return;
   if(confirm('Your opponent offers a draw. Accept?')){
     broadcastEnd('draw','Draw by agreement');
     triggerGameEnd('draw','draw','Draw by agreement');
@@ -6802,7 +6804,7 @@ function handleDrawOffer(){
 }
 
 async function resignGame(){
-  if(gameEnded||G.status!=='playing') return;
+  if(gameEnded||!gameLive()) return;
   if(!confirm('Resign this game?')) return;
   const winner=opp(myColor);
   await broadcastEnd(winner,`${colorName(myColor)} resigned`);
@@ -8576,7 +8578,7 @@ function toggleRbd(){
   showToast(_rbdPref?'💀 Return by Death ON — your captured pieces come back':'Return by Death is off',2600);
 }
 
-const APP_BUILD='2026-11-18-ep1';
+const APP_BUILD='2026-11-18-check1';
 const RBD_AUDIO_URL='sounds/return-by-death.mp3';
 let _rbdAudio=null;
 try{ _rbdAudio=new Audio(RBD_AUDIO_URL); _rbdAudio.preload='auto'; }catch(e){}
