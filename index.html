@@ -3461,6 +3461,29 @@ input::placeholder{font-family:var(--sans) !important;letter-spacing:.02em}
   .prof-skin{display:none}
 }
 @media(max-width:420px){ .ach-grid{grid-template-columns:1fr} }
+
+/* ---------- leaderboard animations ---------- */
+#leaderboard-list{position:relative}
+.lb-row{position:relative;will-change:transform}
+.lb-row.lb-rise{border-color:var(--gold) !important;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--gold) 40%,transparent),0 14px 30px -18px color-mix(in srgb,var(--gold) 70%,transparent)}
+.lb-row.lb-rise::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gold) 22%,transparent),transparent);background-size:200% 100%;
+  animation:lbShine 1.2s ease-out 1}
+@keyframes lbShine{from{background-position:120% 0}to{background-position:-80% 0}}
+.lb-move{display:inline-block;margin-left:8px;font-size:.62rem;font-weight:700;letter-spacing:.06em;color:#0b0a08;background:var(--gold);
+  padding:2px 7px;border-radius:999px;vertical-align:middle;animation:lbBadgeIn .45s cubic-bezier(.34,1.56,.64,1) both;transition:opacity .4s,transform .4s}
+.lb-move.out{opacity:0;transform:translateY(-4px)}
+@keyframes lbBadgeIn{from{opacity:0;transform:scale(.6) translateY(4px)}to{opacity:1;transform:none}}
+.lb-info{display:flex;flex-direction:column}
+.lb-info .lb-move{align-self:flex-start;margin:4px 0 0}
+.lb-sort-btn{transition:background .25s,color .25s,border-color .25s}
+
+/* rows are solid so they slide cleanly past each other while re-ordering */
+.lb-row.lb-rise,.lb-row.lb-rise:hover{background:color-mix(in srgb,var(--gold) 9%,var(--surface)) !important}
+.lb-row{background:var(--surface) !important}
+.lb-row.lb-you{background:color-mix(in srgb,var(--gold) 6%,var(--surface)) !important}
+.lb-row:hover{background:color-mix(in srgb,var(--gold) 3%,var(--surface)) !important}
 </style>
 </head>
 
@@ -5709,13 +5732,16 @@ async function saveNewName(){
 
 /* ---------- leaderboard ---------- */
 
-async function loadLeaderboard(){
+async function loadLeaderboard(opts={}){
   const list = document.getElementById('leaderboard-list');
   if(!list) return;
+  const reason = opts.reason || 'open';   // 'open' | 'sort' | 'poll'
+  const hadRows = !!list.querySelector('.lb-row[data-uid]');
 
-  list.innerHTML = '<div class="public-empty">Loading leaderboard…</div>';
+  if(!hadRows) list.innerHTML = '<div class="public-empty">Loading leaderboard…</div>';
 
   const users = await fbGet('users');
+  if(reason==='poll'&&(document.getElementById('leaderboard-page')?.classList.contains('hidden'))) return;
   const arr = [];
 
   if(users && typeof users === 'object'){
@@ -5740,8 +5766,19 @@ async function loadLeaderboard(){
 
   if(!top.length){
     list.innerHTML = '<div class="public-empty">No players yet. Be the first to win!</div>';
+    _lbLastSig=''; _lbPrevOrder={};
     return;
   }
+
+  // nothing changed since the last check -> leave the list alone
+  const sig=_lbSort+'|'+top.map(u=>`${u.uid}:${u.wins}:${u.xp}:${u.coins}:${u.name}:${u.photoURL?1:0}`).join(',');
+  if(reason==='poll'&&sig===_lbLastSig) return;
+  _lbLastSig=sig;
+
+  // FLIP: remember where every row was before re-rendering
+  const oldTop={};
+  list.querySelectorAll('.lb-row[data-uid]').forEach(r=>{ oldTop[r.dataset.uid]=r.getBoundingClientRect().top; });
+  const prevOrder=_lbPrevOrder[_lbSort]||null;   // places from the last render in this same sort
 
   list.innerHTML = '';
 
@@ -5751,6 +5788,7 @@ async function loadLeaderboard(){
 
     const row = document.createElement('div');
     row.className = 'lb-row' + (isMe ? ' lb-you' : '');
+    row.dataset.uid = u.uid;
 
     const rankEl = document.createElement('div');
     rankEl.className = 'lb-rank' + (rank <= 3 ? ' lb-rank-' + rank : '');
@@ -5798,6 +5836,8 @@ async function loadLeaderboard(){
     row.onkeydown=e=>{ if(e.key==='Enter') openProfile(u.uid); };
     list.appendChild(row);
   });
+  _animateLeaderboard(list,top,oldTop,prevOrder,reason,hadRows);
+  _lbPrevOrder[_lbSort]=Object.fromEntries(top.map((u,i)=>[u.uid,i]));
 }
 
 
@@ -6304,6 +6344,7 @@ function showPage(page){
 
   if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
   if(livePollTimer){ clearInterval(livePollTimer); livePollTimer=null; }
+  if(_lbPollTimer){ clearInterval(_lbPollTimer); _lbPollTimer=null; }
 
   if(isPub){
     loadPublicRooms();
@@ -6314,7 +6355,13 @@ function showPage(page){
   }else if(isShop){
     renderShop();
   }else if(isLb){
-    loadLeaderboard();
+    loadLeaderboard({reason:'open'});
+    // every 15s, check whether anyone's place changed
+    _lbPollTimer=setInterval(()=>{
+      const pg=document.getElementById('leaderboard-page');
+      if(document.hidden||!pg||pg.classList.contains('hidden')||isSpectator) return;
+      loadLeaderboard({reason:'poll'});
+    },15000);
   }
 }
 
@@ -9831,7 +9878,7 @@ function setLeaderboardSort(k){
   document.querySelectorAll('.lb-sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===_lbSort));
   const sub=document.getElementById('lb-sub');
   if(sub) sub.textContent=_lbSort==='xp'?'Top players ranked by XP and chess rank.':'Top players ranked by total wins.';
-  loadLeaderboard();
+  loadLeaderboard({reason:'sort'});
 }
 
 // Work out what this game earned from your own moves in the move list
@@ -10156,6 +10203,57 @@ function renderProfile(p,id,self){
   if(sq){ try{ const el=makePieceEl('N',eq); el.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove()); sq.appendChild(el); }catch(e){} }
   const img=body.querySelector('.prof-avatar img');
   if(img) img.onerror=()=>{ img.remove(); body.querySelector('.prof-avatar').classList.remove('has-photo'); };
+}
+
+/* ============================================================
+   LEADERBOARD ANIMATIONS
+   - switching Wins <-> Rank/XP: rows glide to their new places (FLIP)
+   - every 15s: anyone who climbed rises into place with a gold highlight
+============================================================ */
+var _lbPollTimer=null, _lbLastSig='', _lbPrevOrder={};
+function _animateLeaderboard(list,top,oldTop,prevOrder,reason,hadRows){
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rows=[...list.querySelectorAll('.lb-row[data-uid]')];
+  rows.forEach((row,i)=>{
+    const uid=row.dataset.uid;
+    const before=oldTop[uid];
+    const after=row.getBoundingClientRect().top;
+    if(reduce) return;
+    if(before===undefined){
+      // new to the list (or first load): gentle staggered fade-in
+      row.animate([{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'none'}],
+        {duration:420,delay:hadRows?120:Math.min(i,14)*35,easing:'cubic-bezier(.2,.7,.2,1)',fill:'backwards'});
+      return;
+    }
+    const dy=before-after;
+    if(Math.abs(dy)>1){
+      const rising=dy>0;
+      row.style.zIndex=rising?'3':'1';
+      const a=row.animate([{transform:`translateY(${dy}px)`},{transform:'none'}],
+        {duration:reason==='sort'?620:900,delay:reason==='sort'?Math.min(i,14)*18:0,easing:'cubic-bezier(.22,.8,.22,1)',fill:'backwards'});
+      a.onfinish=a.oncancel=()=>{ row.style.zIndex=''; };
+    }
+    // the number on the right changes meaning when the sort switches
+    if(reason==='sort'){
+      const v=row.querySelector('.lb-wins');
+      if(v) v.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:380,delay:180,easing:'ease-out',fill:'backwards'});
+    }
+  });
+  // highlight anyone who climbed since the last check (same sort only)
+  if(reason==='poll'&&prevOrder){
+    top.forEach((u,i)=>{
+      const was=prevOrder[u.uid];
+      if(was===undefined||was<=i) return;
+      const row=list.querySelector(`.lb-row[data-uid="${CSS.escape(u.uid)}"]`);
+      if(!row) return;
+      const badge=document.createElement('span');
+      badge.className='lb-move';
+      badge.textContent='▲ '+(was-i);
+      row.querySelector('.lb-info')?.appendChild(badge);
+      row.classList.add('lb-rise');
+      setTimeout(()=>{ row.classList.remove('lb-rise'); badge.classList.add('out'); setTimeout(()=>badge.remove(),500); },4200);
+    });
+  }
 }
 </script>
 
