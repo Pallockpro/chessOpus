@@ -3051,7 +3051,7 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 #subaru-scene{position:fixed;inset:0;z-index:9500;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .45s;cursor:default}
 #subaru-scene.show{opacity:1}
 #subaru-scene video{width:min(100vw,calc((100vh - 24vh) * 16 / 9));max-height:76vh;background:#000;box-shadow:0 0 60px rgba(140,90,255,.35);pointer-events:none}
-.sb-bar{position:absolute;left:0;right:0;height:12vh;display:flex;align-items:center;justify-content:center;padding:0 16px;background:#000}
+.sb-bar{position:absolute;left:0;right:0;height:12vh;display:flex;align-items:center;justify-content:center;padding:0 16px;background:transparent;z-index:3}
 .sb-bar.top{top:0;align-items:flex-end;padding-bottom:1.4vh}
 .sb-bar.bottom{bottom:0;align-items:flex-start;padding-top:1.4vh}
 .sb-title{font-family:'Cinzel',serif;font-weight:900;letter-spacing:.4em;font-size:clamp(.85rem,3vw,1.5rem);color:#e7d8ff;text-shadow:0 0 14px #8a5cff}
@@ -3119,6 +3119,58 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
   background:linear-gradient(180deg,#8a5cff,#3d1f8f) !important;color:#fff;animation:sbPulse 1.4s ease-in-out infinite}
 .sb-sound.hidden{display:none}
 @keyframes sbPulse{50%{box-shadow:0 0 22px rgba(140,90,255,.85)}}
+
+/* ---------- SubaruEdit Re:Zero-style VFX ---------- */
+#subaru-scene{background:radial-gradient(ellipse at center,#12041c 0%,#06010a 55%,#000 100%)}
+#subaru-scene .sb-video{position:relative;z-index:2}
+#subaru-scene .sb-video video{box-shadow:0 0 0 1px rgba(190,120,255,.35),0 0 50px rgba(140,60,220,.55),0 0 120px rgba(90,20,160,.45)}
+.sb-play,.sb-sound{z-index:4}
+.sb-fx-layer{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.sb-miasma{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sb-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(70,10,110,.35) 70%,rgba(10,0,20,.85) 100%);animation:sbVig 2.4s ease-in-out infinite;will-change:opacity;transform:translateZ(0)}
+@keyframes sbVig{50%{opacity:.6}}
+.sb-chain{position:absolute;height:20px;opacity:.8;overflow:hidden;will-change:transform}
+.sb-chain-in{position:absolute;top:0;bottom:0;left:-96px;right:0;background-repeat:repeat-x;background-size:48px 20px;will-change:transform;animation:sbStrip 3.2s linear infinite}
+.sb-chain.x2 .sb-chain-in{animation-direction:reverse}
+@keyframes sbStrip{from{transform:translateX(0)}to{transform:translateX(96px)}}
+/* two chains crossing in an X behind the video */
+.sb-chain.x1,.sb-chain.x2{left:50%;top:50%;width:170vmax;margin-left:-85vmax;margin-top:-10px;transform-origin:50% 50%;
+  animation:sbLashIn .9s cubic-bezier(.2,.9,.3,1) both}
+.sb-chain.x1{--rot:28deg}
+.sb-chain.x2{--rot:-28deg}
+@keyframes sbLashIn{from{transform:rotate(var(--rot)) scaleX(0);opacity:0}60%{opacity:.9}to{transform:rotate(var(--rot)) scaleX(1);opacity:.8}}
+/* chains hanging from the top and swinging at the sides */
+.sb-chain.hang{top:-10px;width:62vh;transform-origin:0 50%;animation:sbSwing 3.6s ease-in-out infinite alternate,sbDrop .8s cubic-bezier(.2,.9,.3,1) both}
+.sb-chain.l1{left:7vw;--a:84deg;--b:96deg}
+.sb-chain.l2{left:15vw;width:44vh;--a:94deg;--b:82deg;animation-duration:4.2s,.8s}
+.sb-chain.r1{left:calc(100% - 7vw);--a:96deg;--b:84deg}
+.sb-chain.r2{left:calc(100% - 15vw);width:44vh;--a:82deg;--b:94deg;animation-duration:4.6s,.8s}
+@keyframes sbSwing{from{transform:rotate(var(--a))}to{transform:rotate(var(--b))}}
+@keyframes sbDrop{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+/* shadow hands reaching in from the edges */
+.sb-hand{position:absolute;width:min(22vw,180px);height:min(40vh,330px);opacity:0;will-change:transform,opacity;
+  animation:sbReach 5.5s ease-in-out infinite}
+.sb-hand svg{width:100%;height:100%;display:block}
+.sb-hand.bl{left:2vw;bottom:-6vh;--r:14deg}
+.sb-hand.br{right:2vw;bottom:-6vh;--r:-16deg}
+.sb-hand.bm{left:50%;bottom:-12vh;margin-left:min(-11vw,-90px);--r:0deg;animation-duration:7s}
+.sb-hand.tl{left:4vw;top:-6vh;--r:166deg}
+.sb-hand.tr{right:4vw;top:-6vh;--r:-166deg}
+@keyframes sbReach{
+  0%{opacity:0;transform:translateY(35%) rotate(var(--r)) scale(.9)}
+  25%{opacity:.95}
+  50%{opacity:.95;transform:translateY(0) rotate(calc(var(--r) + 5deg)) scale(1)}
+  75%{opacity:.8;transform:translateY(8%) rotate(calc(var(--r) - 4deg)) scale(1)}
+  100%{opacity:0;transform:translateY(35%) rotate(var(--r)) scale(.9)}}
+.sb-hand.tl,.sb-hand.tr{animation-name:sbReachDown}
+@keyframes sbReachDown{
+  0%{opacity:0;transform:translateY(-35%) rotate(var(--r)) scale(.9)}
+  25%{opacity:.9}
+  50%{opacity:.9;transform:translateY(0) rotate(calc(var(--r) - 5deg)) scale(1)}
+  100%{opacity:0;transform:translateY(-35%) rotate(var(--r)) scale(.9)}}
+.sb-title{text-shadow:0 0 14px #8a5cff,0 2px 6px #000}
+.sb-time{text-shadow:0 1px 4px #000}
+@media (prefers-reduced-motion:reduce){.sb-chain,.sb-hand,.sb-vignette{animation-duration:12s !important}}
 </style>
 </head>
 
@@ -9100,6 +9152,97 @@ function _unlockSubaruVideo(){
 }
 ['touchend','click','keydown'].forEach(ev=>document.addEventListener(ev,_unlockSubaruVideo,true));
 
+/* ---------- Re:Zero-style VFX around the SubaruEdit video ----------
+   Original effects only: drifting purple miasma, chains crossing behind the
+   video and hanging at the sides, and shadow hands reaching from the edges. */
+const _SB_CHAIN_TILE='data:image/svg+xml,'+encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="20" viewBox="0 0 48 20">'+
+  '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6e0f5"/><stop offset=".45" stop-color="#8a80a3"/><stop offset="1" stop-color="#26202f"/></linearGradient></defs>'+
+  '<rect x="3" y="3.5" width="27" height="13" rx="6.5" fill="none" stroke="#a259ff" stroke-opacity=".28" stroke-width="7"/>'+
+  '<rect x="26" y="8" width="21" height="4" rx="2" fill="none" stroke="#a259ff" stroke-opacity=".22" stroke-width="5"/>'+
+  '<rect x="3" y="3.5" width="27" height="13" rx="6.5" fill="none" stroke="url(#g)" stroke-width="3.4"/>'+
+  '<rect x="26" y="8" width="21" height="4" rx="2" fill="url(#g)"/></svg>');
+const _SB_HAND_SVG='<svg viewBox="0 0 120 220" preserveAspectRatio="xMidYMax meet"><defs><radialGradient id="sbHandG" cx="50%" cy="35%" r="70%">'+
+  '<stop offset="0" stop-color="#3a1257"/><stop offset=".6" stop-color="#14051f"/><stop offset="1" stop-color="#000"/></radialGradient></defs>'+
+  '<path d="M58 220 C46 172 34 140 38 112 L18 52 C14 41 27 36 31 46 L46 92 L42 22 C41 9 56 9 56 22 L60 88 L68 18 C69 6 84 8 82 20 L76 92 L92 40 C95 29 108 33 105 44 L86 112 C94 136 84 178 78 220 Z" fill="none" stroke="#9b3dff" stroke-opacity=".35" stroke-width="9" stroke-linejoin="round"/>'+
+  '<path d="M58 220 C46 172 34 140 38 112 L18 52 C14 41 27 36 31 46 L46 92 L42 22 C41 9 56 9 56 22 L60 88 L68 18 C69 6 84 8 82 20 L76 92 L92 40 C95 29 108 33 105 44 L86 112 C94 136 84 178 78 220 Z" fill="url(#sbHandG)" stroke="#c48bff" stroke-opacity=".5" stroke-width="1.5"/></svg>';
+
+function _buildSubaruFx(layer){
+  if(!layer) return ()=>{};
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // chains
+  const chains=[
+    {cls:'x1'},{cls:'x2'},
+    {cls:'hang l1'},{cls:'hang l2'},{cls:'hang r1'},{cls:'hang r2'}
+  ];
+  chains.forEach((c,i)=>{
+    const el=document.createElement('div');
+    el.className='sb-chain '+c.cls;
+    el.style.animationDelay=(i*0.12).toFixed(2)+'s';
+    const strip=document.createElement('div');
+    strip.className='sb-chain-in';
+    strip.style.backgroundImage=`url("${_SB_CHAIN_TILE}")`;
+    el.appendChild(strip);
+    layer.appendChild(el);
+  });
+  // shadow hands reaching in from the edges
+  const hands=[
+    {pos:'bl',delay:0.4},{pos:'br',delay:1.1},{pos:'bm',delay:2.2},
+    {pos:'tl',delay:1.6},{pos:'tr',delay:2.8}
+  ];
+  hands.forEach(h=>{
+    const el=document.createElement('div');
+    el.className='sb-hand '+h.pos;
+    el.innerHTML=_SB_HAND_SVG;
+    el.style.animationDelay=h.delay+'s';
+    layer.appendChild(el);
+  });
+  const vig=document.createElement('div'); vig.className='sb-vignette'; layer.appendChild(vig);
+
+  // miasma canvas
+  const cv=document.createElement('canvas'); cv.className='sb-miasma'; layer.insertBefore(cv,layer.firstChild);
+  const cx=cv.getContext('2d');
+  // the smoke is soft, so a lower-resolution canvas looks the same and is much cheaper
+  const dpr=Math.min(1,window.devicePixelRatio||1)*.6;
+  let W=0,H=0;
+  const fit=()=>{ W=cv.width=Math.max(1,Math.floor(innerWidth*dpr)); H=cv.height=Math.max(1,Math.floor(innerHeight*dpr)); };
+  fit(); window.addEventListener('resize',fit);
+  // pre-rendered smoke puff
+  const puff=document.createElement('canvas'); puff.width=puff.height=128;
+  { const g=puff.getContext('2d'), gr=g.createRadialGradient(64,64,0,64,64,64);
+    gr.addColorStop(0,'rgba(120,40,190,.55)'); gr.addColorStop(.45,'rgba(70,15,120,.28)'); gr.addColorStop(1,'rgba(20,0,40,0)');
+    g.fillStyle=gr; g.fillRect(0,0,128,128); }
+  const N=reduce?10:(innerWidth<620?18:24);
+  const smoke=Array.from({length:N},()=>({x:Math.random(),y:Math.random(),r:.1+Math.random()*.16,vx:(Math.random()-.5)*.00004,vy:-(.00002+Math.random()*.00005),a:.25+Math.random()*.5,ph:Math.random()*6.28}));
+  const motes=Array.from({length:reduce?10:40},()=>({x:Math.random(),y:Math.random(),vy:-(.00004+Math.random()*.0001),s:.6+Math.random()*1.6,ph:Math.random()*6.28}));
+  let raf=0,last=performance.now(),t=0,alive=true;
+  const draw=now=>{
+    if(!alive) return;
+    const dt=Math.min(50,now-last); last=now; t+=dt;
+    cx.clearRect(0,0,W,H);
+    cx.globalCompositeOperation='lighter';
+    const m=Math.max(W,H);
+    for(const p of smoke){
+      p.x+=p.vx*dt+Math.sin(t*.0004+p.ph)*.00008; p.y+=p.vy*dt;
+      if(p.y<-.3){ p.y=1.25; p.x=Math.random(); }
+      const r=p.r*m, a=p.a*(.75+.25*Math.sin(t*.001+p.ph));
+      cx.globalAlpha=a;
+      cx.drawImage(puff,p.x*W-r,p.y*H-r,r*2,r*2);
+    }
+    for(const q of motes){
+      q.y+=q.vy*dt; q.x+=Math.sin(t*.002+q.ph)*.0002;
+      if(q.y<-.05){ q.y=1.05; q.x=Math.random(); }
+      cx.globalAlpha=.35+.35*Math.sin(t*.004+q.ph);
+      cx.fillStyle='#d9b8ff';
+      cx.beginPath(); cx.arc(q.x*W,q.y*H,q.s*dpr,0,6.283); cx.fill();
+    }
+    cx.globalAlpha=1; cx.globalCompositeOperation='source-over';
+    raf=requestAnimationFrame(draw);
+  };
+  raf=requestAnimationFrame(draw);
+  return ()=>{ alive=false; cancelAnimationFrame(raf); window.removeEventListener('resize',fit); layer.innerHTML=''; };
+}
+
 function playSubaruEdit(isPlayer){
   if(_subaruOn) return;
   _subaruOn=true;
@@ -9112,6 +9255,7 @@ function playSubaruEdit(isPlayer){
   const ov=document.createElement('div');
   ov.id='subaru-scene';
   ov.innerHTML='<div class="sb-bar top"><div class="sb-title">🎬 SUBARU EDIT</div></div>'+
+    '<div class="sb-fx-layer" aria-hidden="true"></div>'+
     '<div class="sb-video"></div>'+
     '<button class="sb-play hidden" type="button">▶ Tap to play</button>'+
     '<button class="sb-sound hidden" type="button">🔊 Tap for sound</button>'+
@@ -9127,6 +9271,8 @@ function playSubaruEdit(isPlayer){
   ov.querySelector('.sb-video').appendChild(v);
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('show'));
+  let stopFx=()=>{};
+  try{ stopFx=_buildSubaruFx(ov.querySelector('.sb-fx-layer')); }catch(e){}
 
   const playBtn=ov.querySelector('.sb-play');
   const soundBtn=ov.querySelector('.sb-sound');
@@ -9139,7 +9285,7 @@ function playSubaruEdit(isPlayer){
     v.onpause=v.onended=v.ontimeupdate=v.onerror=null;
     try{ v.pause(); v.currentTime=0; v.muted=false; }catch(e){}
     ov.classList.remove('show');
-    setTimeout(()=>{ ov.remove(); },500);
+    setTimeout(()=>{ try{ stopFx(); }catch(e){} ov.remove(); },500);
     if(!wasBusy) chiliFxBusy=false;
     _subaruOn=false;
     try{ if(musicWasPlaying&&_musicAudio) _musicAudio.play().catch(()=>{}); }catch(e){}
