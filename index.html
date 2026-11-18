@@ -9348,11 +9348,22 @@ function playSubaruEdit(isPlayer){
   const soundBtn=ov.querySelector('.sb-sound');
   const left=ov.querySelector('.sb-left');
   let finished=false;
+  const startAt=Date.now();
+  // The overlay closes after the video's real length by the wall clock, even if
+  // the browser paused or stalled the video (tab switch, app switch, slow
+  // network). The game clock pause is SUBARU_MS+3s, so this must stay below it.
+  const HARD_CAP=SUBARU_MS+2000;
+  let watchdog=null, lastT=-1, stuckSince=0;
+  const onVis=()=>{ if(!document.hidden) resume(); };
+  const onFocus=()=>resume();
   const finish=()=>{
     if(finished) return; finished=true;
-    clearTimeout(safety);
+    clearTimeout(safety); clearInterval(watchdog);
     window.removeEventListener('keydown',keyBlock,true);
-    v.onpause=v.onended=v.ontimeupdate=v.onerror=null;
+    document.removeEventListener('visibilitychange',onVis);
+    window.removeEventListener('focus',onFocus);
+    window.removeEventListener('pageshow',onFocus);
+    v.onpause=v.onended=v.ontimeupdate=v.onerror=v.onplaying=null;
     try{ v.pause(); v.currentTime=0; v.muted=false; }catch(e){}
     ov.classList.remove('show');
     setTimeout(()=>{ try{ stopFx(); }catch(e){} ov.remove(); },500);
@@ -9360,32 +9371,65 @@ function playSubaruEdit(isPlayer){
     _subaruOn=false;
     try{ if(musicWasPlaying&&_musicAudio) _musicAudio.play().catch(()=>{}); }catch(e){}
   };
-  // if the video can't load at all, don't trap anyone
-  const safety=setTimeout(finish,SUBARU_MS+15000);
+  // backup for when timers are throttled; the watchdog below does the real check
+  const safety=setTimeout(finish,HARD_CAP+1000);
 
   // 1) try with sound  2) if the browser refuses, play muted (always allowed)
-  //    and offer a one-tap unmute  3) last resort: a play button
-  const tryPlay=()=>{
+  //    with a one-tap unmute  3) last resort: a visible play button — never a
+  //    silent dead end
+  let playing=false;
+  const tryPlay=(withSound=true)=>{
+    if(finished||document.hidden) return;   // browsers refuse play() in a hidden tab
+    if(withSound) v.muted=false;
     const pr=v.play();
     if(!pr||!pr.catch) return;
-    pr.catch(()=>{
-      if(finished) return;
+    pr.then(()=>{ playBtn.classList.add('hidden'); if(!v.muted) soundBtn.classList.add('hidden'); }).catch(()=>{
+      if(finished||document.hidden) return;
       v.muted=true;
       const pr2=v.play();
       soundBtn.classList.remove('hidden');
-      if(pr2&&pr2.catch) pr2.catch(()=>{ if(!finished){ soundBtn.classList.add('hidden'); playBtn.classList.remove('hidden'); } });
+      if(pr2&&pr2.catch) pr2.then(()=>playBtn.classList.add('hidden')).catch(()=>{ if(!finished){ soundBtn.classList.add('hidden'); playBtn.classList.remove('hidden'); } });
     });
   };
-  soundBtn.onclick=()=>{ v.muted=false; soundBtn.classList.add('hidden'); if(v.paused) tryPlay(); };
-  playBtn.onclick=()=>{ playBtn.classList.add('hidden'); v.muted=false; tryPlay(); };
+  // keep everyone at the same point: if we fell behind (tab was hidden), jump ahead
+  const resync=()=>{
+    const should=(Date.now()-startAt)/1000;
+    if(isFinite(v.duration)&&should<v.duration-0.5&&should-v.currentTime>2){
+      try{ v.currentTime=should; }catch(e){}
+    }
+  };
+  const resume=()=>{
+    if(finished) return;
+    if(Date.now()-startAt>=HARD_CAP){ finish(); return; }
+    if(document.hidden) return;
+    resync();
+    if(v.paused&&!v.ended) tryPlay(!v.muted||soundBtn.classList.contains('hidden'));
+  };
+  soundBtn.onclick=()=>{ v.muted=false; soundBtn.classList.add('hidden'); if(v.paused) tryPlay(true); };
+  playBtn.onclick=()=>{ playBtn.classList.add('hidden'); tryPlay(true); };
   // can't be paused: resume if anything pauses it before the end
-  v.onpause=()=>{ if(!finished&&!v.ended) setTimeout(()=>{ if(!finished&&!v.ended&&v.paused) v.play().catch(()=>{}); },60); };
+  v.onpause=()=>{ playing=false; if(!finished&&!v.ended) setTimeout(resume,80); };
+  v.onplaying=()=>{ playing=true; };
   v.ontimeupdate=()=>{
     const sLeft=Math.max(0,Math.ceil((v.duration||72)-v.currentTime));
     left.textContent=`${Math.floor(sLeft/60)}:${String(sLeft%60).padStart(2,'0')}`;
   };
   v.onended=finish;
   v.onerror=()=>{ showToast('Could not load the video',2500); setTimeout(finish,1500); };
+  document.addEventListener('visibilitychange',onVis);
+  window.addEventListener('focus',onFocus);
+  window.addEventListener('pageshow',onFocus);
+  // watchdog: restart a paused video, nudge a stalled one, enforce the time cap
+  watchdog=setInterval(()=>{
+    if(finished) return;
+    if(Date.now()-startAt>=HARD_CAP){ finish(); return; }
+    if(document.hidden) return;
+    if(v.paused&&!v.ended){ resume(); return; }
+    if(v.currentTime===lastT){
+      if(!stuckSince) stuckSince=Date.now();
+      else if(Date.now()-stuckSince>3000){ stuckSince=0; try{ v.currentTime=v.currentTime+0.05; }catch(e){} tryPlay(!v.muted); }
+    }else{ stuckSince=0; lastT=v.currentTime; }
+  },1000);
   tryPlay();
 }
 
