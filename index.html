@@ -3001,6 +3001,12 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 .rbd-player iframe{display:block;width:200px;height:113px;border:0;border-radius:6px}
 .rbd-skip{position:absolute;right:16px;top:calc(12vh + 10px);z-index:4;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase}
 @media(max-width:620px){.rbd-player iframe{width:160px;height:90px}.rbd-player{right:10px}}
+
+/* Return by Death revival */
+#rbd-scene.revived .rbd-piece{animation:rbdRevive .8s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes rbdRevive{0%{transform:scale(.8);opacity:.55;filter:grayscale(.6)}60%{transform:scale(1.18);opacity:1;filter:drop-shadow(0 0 22px #c58bff) brightness(1.3)}100%{transform:scale(1.05);opacity:1;filter:drop-shadow(0 0 14px rgba(180,90,255,.8))}}
+.revive-fx .crown-ring{border-color:#b06bff;box-shadow:0 0 18px #9b4dff}
+.revive-fx .crown-icon{color:#e2c4ff;font-weight:700;text-shadow:0 0 10px #9b4dff}
 </style>
 </head>
 
@@ -6464,18 +6470,25 @@ function renderSpectatorRoom(room){
 
   if(sig!==spectateSig){
     spectateSig=sig;
-    renderSpectatorBoard();
-    renderSpectatorUI();
+    if(_rbdOverride&&_rbdOverride.mode==='spec') _finishRevive(true);
     // Return by Death for spectators: a new capture since the last poll
     const lm=spectatorState.lastMove, n=spectatorState.log.length;
+    let specVictim=null;
     if(spectatorRbd&&_prevSpec&&lm&&n===_prevSpec.log.length+1){
       const note=String((spectatorState.log[n-1]||{}).note||'');
       if(note.includes('x')){
-        let victim=_prevSpec.board?.[lm.tr]?.[lm.tc];
-        if(!victim){ const mover=_prevSpec.turn; victim=mover==='w'?'p':'P'; }
-        triggerReturnByDeath(victim,spectatorSkins,false);
+        specVictim=_prevSpec.board?.[lm.tr]?.[lm.tc];
+        if(specVictim){
+          _rbdOverride={r:lm.tr,c:lm.tc,piece:specVictim,shown:_prevSpec.board?.[lm.fr]?.[lm.fc]||null,mode:'spec'};
+        }else{
+          specVictim=_prevSpec.turn==='w'?'p':'P';
+          _rbdOverride={r:lm.fr,c:lm.tc,piece:specVictim,shown:null,mode:'spec'};
+        }
       }
     }
+    renderSpectatorBoard();
+    renderSpectatorUI();
+    if(specVictim) triggerReturnByDeath(specVictim,spectatorSkins,false);
   }
 
   renderSpectatorTimers();
@@ -6501,7 +6514,7 @@ function renderSpectatorBoard(){
       if(st.lastMove&&st.lastMove.tr===r&&st.lastMove.tc===c) sq.classList.add('last-to');
       if(kpos&&kpos[0]===r&&kpos[1]===c) sq.classList.add('in-check');
 
-      const p=st.board[r]?st.board[r][c]:null;
+      const p=(_rbdOverride&&_rbdOverride.mode==='spec'&&_rbdOverride.r===r&&_rbdOverride.c===c)?_rbdOverride.shown:(st.board[r]?st.board[r][c]:null);
       if(p&&PIECE_FILES[p]){
         const pc=colorOf(p);
         const skinId=spectatorSkins[pc]||'classic';
@@ -6929,6 +6942,7 @@ function movesForSelection(r,c){
 
 function executeMove(move,local){
   if(gameEnded) return;
+  if(_rbdOverride) _finishRevive(true);
 
   const p=G.board[move.fr]?.[move.fc];
   if(!p) return;
@@ -6963,6 +6977,18 @@ function executeMove(move,local){
   G.castling=result.castling;
   G.enPassant=result.enPassant;
 
+  // Return by Death: the captured piece comes back on the square it died on,
+  // replacing whatever is standing there. The mover decides (and tells the
+  // opponent) whether it was on, so both boards always match.
+  const _rbdActive=local?!!roomRbd:!!move.rbd;
+  let _revive=null;
+  if(isCapture&&_victim&&_rbdActive){
+    const vr=move.isEnPassant?move.fr:move.tr, vc=move.tc;
+    _revive={r:vr,c:vc,piece:_victim,shown:G.board[vr][vc]};
+    G.board[vr][vc]=_victim;
+    _rbdOverride={..._revive,mode:'game'};
+  }
+
   G.log.push({color:movedColor,note});
   G.lastMove={fr:move.fr,fc:move.fc,tr:move.tr,tc:move.tc};
   G.turn=opp(G.turn);
@@ -6982,7 +7008,7 @@ function executeMove(move,local){
 
   renderBoard();
   runMoveAnim(_anim);
-  if(isCapture&&_victim&&roomRbd) triggerReturnByDeath(_victim,currentRoomSkins,true);
+  if(_revive) triggerReturnByDeath(_victim,currentRoomSkins,true);
   updateUI();
   renderTimers();
 
@@ -6993,7 +7019,8 @@ function executeMove(move,local){
       isEnPassant:!!move.isEnPassant,
       castleSide:move.castleSide||null,
       color:movedColor,
-      bypass:usedBypass
+      bypass:usedBypass,
+      rbd:_rbdActive
     });
   }
 
@@ -7152,7 +7179,7 @@ function renderBoard(){
 
       if(kpos&&kpos[0]===r&&kpos[1]===c) sq.classList.add('in-check');
 
-      const piece=G.board[r][c];
+      const piece=(_rbdOverride&&_rbdOverride.r===r&&_rbdOverride.c===c)?_rbdOverride.shown:G.board[r][c];
       if(piece&&PIECE_FILES[piece]){
         const pc=colorOf(piece);
         const skinId=currentRoomSkins[pc]||'classic';
@@ -8326,7 +8353,7 @@ function showAnnouncement(text,name){
 const RBD_GIF='https://media.tenor.com/74eCtRqbTdcAAAAM/natsuki-subaru-re-zero-natsuki-subaru.gif';
 const RBD_VIDEO_ID='awnlYsvI2iQ';
 const RBD_MS=7000;
-let roomRbd=false, spectatorRbd=false, _rbdBusy=false;
+var roomRbd=false, spectatorRbd=false, _rbdBusy=false;
 let _rbdPref=false;
 try{ _rbdPref=localStorage.getItem('chess-rbd')==='1'; }catch(e){}
 function _syncRbdToRoom(){
@@ -8390,7 +8417,10 @@ async function playReturnByDeath(p,skins){
     await wait(2600);
     scene.querySelector('.rbd-caption').innerHTML='…and time <strong>rewinds</strong>.';
     scene.classList.add('rewind');
-    await wait(RBD_MS-2600-600);
+    await wait(1900);
+    scene.querySelector('.rbd-caption').innerHTML=`The ${escapeHtml(name)} <strong>returns</strong>.`;
+    scene.classList.add('revived');
+    await wait(RBD_MS-2600-1900-600);
     scene.classList.remove('show'); scene.classList.add('out');
     await _sleep(600);
   }finally{
@@ -8398,6 +8428,34 @@ async function playReturnByDeath(p,skins){
     chiliFxBusy=wasBusy&&chiliFxBusy;
     if(!wasBusy) chiliFxBusy=false;
     _rbdBusy=false;
+    _finishRevive(false);
+  }
+}
+
+// Show the revived piece on the board (the state already has it)
+var _rbdOverride=null;
+function _finishRevive(silent){
+  const o=_rbdOverride;
+  if(!o) return;
+  _rbdOverride=null;
+  if(o.mode==='spec'){ if(typeof renderSpectatorBoard==='function') renderSpectatorBoard(); }
+  else renderBoard();
+  if(silent) return;
+  const sel=o.mode==='spec'?'#spectate-board .spectate-sq':'#board .sq';
+  let sq=null;
+  if(o.mode==='spec'){
+    // spectator squares are built in board order (white at the bottom)
+    const all=document.querySelectorAll(sel);
+    sq=all[o.r*8+o.c]||null;
+  }else{
+    sq=document.querySelector(`${sel}[data-r="${o.r}"][data-c="${o.c}"]`);
+  }
+  if(sq){
+    const fx=document.createElement('div');
+    fx.className='crown-fx revive-fx';
+    fx.innerHTML='<span class="crown-ring"></span><span class="crown-ring r2"></span><span class="crown-icon">↺</span>';
+    sq.appendChild(fx);
+    setTimeout(()=>fx.remove(),1700);
   }
 }
 </script>
