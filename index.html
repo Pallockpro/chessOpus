@@ -2995,12 +2995,7 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 @keyframes rbdPieceDie{0%{transform:translateY(-10px);opacity:1}55%{opacity:1}100%{transform:translateY(30px) scale(.7) rotate(-18deg);opacity:0;filter:grayscale(1) blur(3px)}}
 #rbd-scene.rewind .rbd-piece{animation:rbdPieceBack 1.2s ease-out forwards}
 @keyframes rbdPieceBack{0%{transform:translateY(30px) scale(.7) rotate(-18deg);opacity:0}100%{transform:none;opacity:.55;filter:grayscale(.6)}}
-.rbd-player{position:absolute;right:16px;bottom:calc(12vh + 12px);z-index:4;background:rgba(10,4,16,.85);border:1px solid rgba(190,120,255,.4);border-radius:10px;padding:6px;
-  box-shadow:0 8px 24px rgba(0,0,0,.5)}
-.rbd-np{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:2px;color:#c9a3ff;text-transform:uppercase;margin:0 2px 4px}
-.rbd-player iframe{display:block;width:200px;height:113px;border:0;border-radius:6px}
 .rbd-skip{position:absolute;right:16px;top:calc(12vh + 10px);z-index:4;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase}
-@media(max-width:620px){.rbd-player iframe{width:160px;height:90px}.rbd-player{right:10px}}
 
 /* Return by Death revival */
 #rbd-scene.revived .rbd-piece{animation:rbdRevive .8s cubic-bezier(.2,.8,.3,1) forwards}
@@ -6012,6 +6007,8 @@ function startGame(){
   gameEnded=false;
   _lastRoomSkinSig=null;
   roomRbd=false;
+  _buildWarned=false; _buildCheckFrom=Date.now()+6000;
+  fbPatch(`rooms/${roomId}/build`,{[myColor]:APP_BUILD});
   playerNames={ w:'', b:'' };
   playerNames[myColor]=myName;
   leaveProcessed=false;
@@ -6173,6 +6170,7 @@ async function pollMoves(){
     }
 
     roomRbd=!!room.returnByDeath;
+    _checkOpponentBuild(room);
     if(room.skins){
       currentRoomSkins = {
         w: room.skins.w || 'classic',
@@ -8351,8 +8349,8 @@ function showAnnouncement(text,name){
 
 /* ---------- Return by Death (passive) ---------- */
 const RBD_GIF='https://media.tenor.com/74eCtRqbTdcAAAAM/natsuki-subaru-re-zero-natsuki-subaru.gif';
-const RBD_VIDEO_ID='awnlYsvI2iQ';
-const RBD_MS=7000;
+const RBD_MS=6400;            // total cutscene length (the sound effect is ~4.1s)
+const RBD_BEAT_DIE=2300, RBD_BEAT_REWIND=1700;
 var roomRbd=false, spectatorRbd=false, _rbdBusy=false;
 let _rbdPref=false;
 try{ _rbdPref=localStorage.getItem('chess-rbd')==='1'; }catch(e){}
@@ -8375,60 +8373,101 @@ function toggleRbd(){
   showToast(_rbdPref?'💀 Return by Death is ON — every capture triggers it':'Return by Death is off',2400);
 }
 
+const APP_BUILD='2026-11-18-rbd2';
+const RBD_AUDIO_URL='sounds/return-by-death.mp3';
+let _rbdAudio=null;
+try{ _rbdAudio=new Audio(RBD_AUDIO_URL); _rbdAudio.preload='auto'; }catch(e){}
+function _playRbdAudio(){
+  if(!_moveSoundsOn||!_rbdAudio) return;
+  try{
+    _rbdAudio.pause(); _rbdAudio.currentTime=0; _rbdAudio.volume=0.9;
+    const pr=_rbdAudio.play(); if(pr&&pr.catch) pr.catch(()=>{});
+  }catch(e){}
+}
+function _stopRbdAudio(){ try{ if(_rbdAudio) _rbdAudio.pause(); }catch(e){} }
+// turn the background music down while the cutscene plays
+let _rbdDucked=null;
+function _duckMusic(on){
+  try{
+    if(!_musicAudio) return;
+    if(on&&_rbdDucked===null){ _rbdDucked=_musicAudio.volume; _musicAudio.volume=_rbdDucked*0.15; }
+    else if(!on&&_rbdDucked!==null){ _musicAudio.volume=_musicVol; _rbdDucked=null; }
+  }catch(e){}
+}
+
+const _rbdQueue=[];
 function triggerReturnByDeath(victim,skins,isPlayer){
   if(!victim) return;
   if(isPlayer) pauseTurnTimer(RBD_MS+3000+800);
+  const job={victim,skins:{...(skins||{})},override:_rbdOverride};
+  // Safety net: whatever happens to the cutscene, the board must end up showing the real piece
+  if(job.override){
+    setTimeout(()=>{ if(_rbdOverride===job.override) _finishRevive(false); },RBD_MS+(isPlayer?780:150)+2500);
+  }
   // let the hand finish placing the piece first
-  setTimeout(()=>playReturnByDeath(victim,skins),isPlayer?780:150);
+  setTimeout(()=>{ _rbdQueue.push(job); _runRbdQueue(); },isPlayer?780:150);
+}
+async function _runRbdQueue(){
+  if(_rbdBusy) return;
+  const job=_rbdQueue.shift();
+  if(!job) return;
+  _rbdBusy=true;
+  try{ await playReturnByDeath(job.victim,job.skins); }
+  catch(e){ console.warn('Return by Death cutscene failed:',e); }
+  finally{
+    _rbdBusy=false;
+    if(job.override&&_rbdOverride===job.override) _finishRevive(false);
+    if(_rbdQueue.length) _runRbdQueue();
+  }
 }
 
 async function playReturnByDeath(p,skins){
-  if(_rbdBusy) return;
-  _rbdBusy=true;
-  const wasBusy=chiliFxBusy; chiliFxBusy=true;
-  const col=colorOf(p);
-  const sk=findSkin((skins&&skins[col])||'classic');
-  const kind=PIECE_NAMES[p.toLowerCase()];
-  const name=(sk&&sk.id!=='classic')?`${sk.name} ${kind}`:`${col==='w'?'White':'Black'} ${kind}`;
-  const scene=document.createElement('div');
-  scene.id='rbd-scene';
-  const mute=_moveSoundsOn?0:1;
-  scene.innerHTML=
-    '<div class="rbd-bg"></div>'+
-    '<div class="rbd-clock" aria-hidden="true"><span class="rbd-hand h1"></span><span class="rbd-hand h2"></span></div>'+
-    '<div class="rbd-bar top"><div class="rbd-title">RETURN BY DEATH</div></div>'+
-    '<div class="rbd-stage">'+
-      `<div class="rbd-gif-wrap"><img class="rbd-gif" src="${RBD_GIF}" alt="Return by Death"></div>`+
-      '<div class="rbd-piece"></div>'+
-    '</div>'+
-    `<div class="rbd-bar bottom"><div class="rbd-caption">The ${escapeHtml(name)} has died.</div></div>`+
-    '<div class="rbd-player"><div class="rbd-np">♪ now playing</div>'+
-      `<iframe src="https://www.youtube-nocookie.com/embed/${RBD_VIDEO_ID}?autoplay=1&mute=${mute}&controls=0&modestbranding=1&rel=0&playsinline=1" title="Return by Death audio" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`+
-    '<div class="rbd-skip">click to skip</div>';
-  const pieceHolder=scene.querySelector('.rbd-piece');
-  pieceHolder.appendChild(makePieceEl(p,sk));
-  pieceHolder.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove());
-  document.body.appendChild(scene);
-  let skip=false;
-  setTimeout(()=>scene.addEventListener('click',()=>{ skip=true; }),1200);
-  requestAnimationFrame(()=>scene.classList.add('show'));
-  const wait=ms=>new Promise(res=>{ const t0=performance.now(); const tick=()=>{ if(skip||performance.now()-t0>=ms) res(); else setTimeout(tick,30); }; tick(); });
+  const wasBusy=chiliFxBusy;
+  chiliFxBusy=true;
+  let scene=null;
   try{
-    await wait(2600);
+    const col=colorOf(p);
+    const sk=findSkin((skins&&skins[col])||'classic');
+    const kind=PIECE_NAMES[p.toLowerCase()]||'Piece';
+    const name=(sk&&sk.id!=='classic')?`${sk.name} ${kind}`:`${col==='w'?'White':'Black'} ${kind}`;
+    scene=document.createElement('div');
+    scene.id='rbd-scene';
+    scene.innerHTML=
+      '<div class="rbd-bg"></div>'+
+      '<div class="rbd-clock" aria-hidden="true"><span class="rbd-hand h1"></span><span class="rbd-hand h2"></span></div>'+
+      '<div class="rbd-bar top"><div class="rbd-title">RETURN BY DEATH</div></div>'+
+      '<div class="rbd-stage">'+
+        `<div class="rbd-gif-wrap"><img class="rbd-gif" src="${RBD_GIF}" alt="Return by Death"></div>`+
+        '<div class="rbd-piece"></div>'+
+      '</div>'+
+      `<div class="rbd-bar bottom"><div class="rbd-caption">The ${escapeHtml(name)} has died.</div></div>`+
+      '<div class="rbd-skip">click to skip</div>';
+    const holder=scene.querySelector('.rbd-piece');
+    try{
+      holder.appendChild(makePieceEl(p,sk));
+      holder.querySelectorAll('.angel-bubble,.chili-bubble').forEach(n=>n.remove());
+    }catch(e){}
+    document.body.appendChild(scene);
+    let skip=false;
+    setTimeout(()=>{ if(scene) scene.addEventListener('click',()=>{ skip=true; }); },1000);
+    requestAnimationFrame(()=>scene&&scene.classList.add('show'));
+    _duckMusic(true);
+    _playRbdAudio();
+    const wait=ms=>new Promise(res=>{ const t0=performance.now(); const tick=()=>{ if(skip||performance.now()-t0>=ms) res(); else setTimeout(tick,30); }; tick(); });
+    await wait(RBD_BEAT_DIE);
     scene.querySelector('.rbd-caption').innerHTML='…and time <strong>rewinds</strong>.';
     scene.classList.add('rewind');
-    await wait(1900);
+    await wait(RBD_BEAT_REWIND);
     scene.querySelector('.rbd-caption').innerHTML=`The ${escapeHtml(name)} <strong>returns</strong>.`;
     scene.classList.add('revived');
-    await wait(RBD_MS-2600-1900-600);
+    await wait(RBD_MS-RBD_BEAT_DIE-RBD_BEAT_REWIND-500);
+    if(skip) _stopRbdAudio();
     scene.classList.remove('show'); scene.classList.add('out');
-    await _sleep(600);
+    await _sleep(500);
   }finally{
-    scene.remove();
-    chiliFxBusy=wasBusy&&chiliFxBusy;
+    if(scene) scene.remove();
+    _duckMusic(false);
     if(!wasBusy) chiliFxBusy=false;
-    _rbdBusy=false;
-    _finishRevive(false);
   }
 }
 
@@ -8456,6 +8495,18 @@ function _finishRevive(silent){
     fx.innerHTML='<span class="crown-ring"></span><span class="crown-ring r2"></span><span class="crown-icon">↺</span>';
     sq.appendChild(fx);
     setTimeout(()=>fx.remove(),1700);
+  }
+}
+
+/* ---------- warn when the two players are on different versions ---------- */
+var _buildWarned=false, _buildCheckFrom=0;
+function _checkOpponentBuild(room){
+  if(_buildWarned||!gameStarted||gameEnded||!myColor) return;
+  const theirs=room&&room.build&&room.build[opp(myColor)];
+  const old=!theirs&&_buildCheckFrom&&Date.now()>_buildCheckFrom;
+  if((theirs&&theirs!==APP_BUILD)||old){
+    _buildWarned=true;
+    showToast('⚠ Opponent is on a different version — both refresh',6000);
   }
 }
 </script>
