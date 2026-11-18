@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chess Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="admin-config.js"></script>
@@ -3197,6 +3198,204 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 /* hide (and stop painting) everything behind a full-screen cutscene */
 html.scene-cover body > *:not(.fullscreen-scene):not(#toast):not(script){visibility:hidden !important}
 html.scene-cover body > *:not(.fullscreen-scene) *{animation-play-state:paused !important}
+
+/* ==========================================================================
+   NOIR — black & champagne-gold design system
+   (cutscenes / SubaruEdit keep their own styling)
+   ========================================================================== */
+:root,:root[data-theme="noir"]{
+  --gold:#C9A45C; --gold-light:#DDBF85; --gold-dim:rgba(201,164,92,.13);
+  --bg:#080808; --surface:#101010; --surface2:#161616;
+  --border:rgba(201,164,92,.16); --text:#EDE8DF; --muted:#8E877C;
+  --white-sq:#E7DBC2; --dark-sq:#6E5B40;
+}
+:root[data-theme="dark"]{
+  --gold:#c9a84c; --gold-light:#e8c97a; --gold-dim:rgba(201,168,76,.25);
+  --bg:#0d0d14; --surface:#13131f; --surface2:#1a1a2c;
+  --border:rgba(201,168,76,.18); --text:#e8e0d0; --muted:#7a7066;
+  --white-sq:#ede0c8; --dark-sq:#a07850;
+}
+:root{
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --hair:rgba(255,255,255,.07);
+  --r-sm:4px; --r-md:6px; --r-lg:8px;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+
+/* ---------- base ---------- */
+body{font-family:var(--sans);background:var(--bg);background-image:none;-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+/* barely-there ambient light that drifts very slowly */
+body::before{content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:radial-gradient(40% 35% at 30% 20%,color-mix(in srgb,var(--gold) 7%,transparent),transparent 70%),
+             radial-gradient(35% 30% at 75% 80%,color-mix(in srgb,var(--gold) 4%,transparent),transparent 70%);
+  animation:ambientDrift 60s ease-in-out infinite alternate}
+@keyframes ambientDrift{to{transform:translate3d(4%,3%,0)}}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
+:is(#top-tabs,#lobby,#public-page,#live-page,#shop-page,#leaderboard-page,#game,#spectator-view,#settings-modal,#create-type-modal,#change-name-modal,#account-menu,#auth-screen,#result-overlay,#promo-modal,#tos-screen,#summon-modal,#taunt-modal,#music-player,#account-btn) :is(*):not(.piece-wrap,.piece-wrap *,.crown-fx *){font-family:var(--sans) !important}
+#toast{font-family:var(--sans) !important}
+:is(#top-tabs,#lobby,#public-page,#live-page,#shop-page,#leaderboard-page,#game,#spectator-view,#settings-modal,#create-type-modal,#change-name-modal,#account-menu,#auth-screen,#result-overlay,#promo-modal,#tos-screen,#summon-modal,#taunt-modal) :is(.card h2,.card h2 *,h3,.hero-title,.hero-title *,.hero-stats dt,#result-title,.rc-name,.rc-name *,.am-name,#tos-card h2,.ru-name,.lb-wins,.rx-total){font-family:var(--serif) !important}
+
+/* ---------- brand ---------- */
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.25rem,2.6vw,1.65rem);letter-spacing:.32em;color:var(--gold);
+  background:none;-webkit-text-fill-color:currentColor;filter:none;text-shadow:none;margin-top:6px}
+h1 span{-webkit-text-fill-color:var(--muted);color:var(--muted);opacity:1;font-weight:500}
+h1 .h1-mark{-webkit-text-fill-color:var(--gold);filter:none;font-size:1em}
+
+/* ---------- navigation: understated underline tabs ---------- */
+#top-tabs{max-width:960px;background:transparent;border:none;border-bottom:1px solid var(--hair);border-radius:0;box-shadow:none;padding:0;gap:4px}
+.top-tab,.top-tab:not(.active){background:transparent !important;border:none;border-radius:0;box-shadow:none !important;color:var(--muted);
+  font-size:.74rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:14px 14px 13px;position:relative;transition:color .25s var(--ease)}
+.top-tab::after{content:'';position:absolute;left:14px;right:14px;bottom:-1px;height:1px;background:var(--gold);transform:scaleX(0);transition:transform .35s var(--ease)}
+.top-tab:hover{color:var(--text);transform:none}
+.top-tab:hover::after{transform:scaleX(.4)}
+.top-tab.active{color:var(--gold);background:transparent !important;box-shadow:none !important}
+.top-tab.active::after{transform:scaleX(1)}
+.top-tab .tab-ic{opacity:.7;font-size:.85rem}
+@media(max-width:620px){
+  #top-tabs{border-bottom:1px solid var(--hair);padding:0}
+  .top-tab,.top-tab:not(.active){font-size:.52rem;letter-spacing:.06em;padding:9px 2px 10px}
+  .top-tab::after{left:18%;right:18%}
+}
+
+/* ---------- surfaces ---------- */
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-md);
+  box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -28px rgba(0,0,0,.9)}
+.card::before{opacity:.55;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gold) 70%,transparent),transparent)}
+.card h2{font-size:1.55rem;font-weight:600;letter-spacing:.01em;text-transform:none;color:var(--text);margin-bottom:8px}
+.card p{color:var(--muted);font-size:.9rem;line-height:1.6}
+.lobby-card:hover{border-color:color-mix(in srgb,var(--gold) 30%,transparent)}
+.card-icon{width:46px;height:46px;font-size:1.4rem;background:transparent;border:1px solid var(--border);box-shadow:none;color:var(--gold)}
+#status-bar,.info-box,.timer-box,#move-log,.chat-panel,#spectate-status,#rank-card,#player-name-display,#staff-bar,#admin-tools,
+.public-room,.live-game,.lb-row,.shop-item,.shop-header{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-md);box-shadow:none}
+.info-box .label,.timer-box .t-label,.chat-panel-head,.settings-label,.mt-label{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.info-box .value{font-weight:500;color:var(--text)}
+.timer-box .t-val{font-weight:600;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:var(--text)}
+.timer-box.active{border-color:color-mix(in srgb,var(--gold) 55%,transparent);background:color-mix(in srgb,var(--gold) 5%,var(--surface));box-shadow:none}
+.timer-box.active .t-val{color:var(--gold)}
+.timer-box.active::after{height:1px;background:var(--gold)}
+#status-bar{font-style:normal;font-size:.92rem;color:var(--text)}
+#move-log .mv-row:nth-child(odd){background:rgba(255,255,255,.02)}
+#move-log .mv-latest{background:var(--gold-dim);color:var(--gold)}
+#player-name-display{border-radius:999px}
+.chat-msg{background:var(--surface2);border:1px solid var(--hair);border-radius:var(--r-sm)}
+.chat-name{font-weight:600}
+
+/* ---------- buttons ---------- */
+button{background:var(--gold);color:#0b0a08;border:1px solid var(--gold);border-radius:var(--r-sm);box-shadow:none;
+  font-family:var(--sans);font-weight:600;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;padding:11px 22px;
+  transition:background .25s var(--ease),border-color .25s var(--ease),color .25s var(--ease),transform .2s var(--ease),box-shadow .25s var(--ease)}
+button:hover{background:var(--gold-light);border-color:var(--gold-light);transform:translateY(-1px);box-shadow:0 10px 24px -14px color-mix(in srgb,var(--gold) 70%,transparent)}
+button:active{transform:translateY(0)}
+button.ghost{background:transparent;color:var(--gold);border:1px solid color-mix(in srgb,var(--gold) 38%,transparent);box-shadow:none}
+button.ghost:hover{background:color-mix(in srgb,var(--gold) 7%,transparent);border-color:var(--gold);color:var(--gold-light);box-shadow:none}
+button:focus-visible,input:focus-visible,.top-tab:focus-visible{outline:1px solid var(--gold);outline-offset:3px}
+
+/* ---------- inputs ---------- */
+input{background:#0c0c0c;border:1px solid rgba(255,255,255,.1);border-radius:var(--r-sm);color:var(--text);font-weight:500}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 12%,transparent)}
+input::placeholder{color:#6d675e}
+
+/* ---------- modals ---------- */
+#settings-modal,#create-type-modal,#change-name-modal,#promo-modal,#result-overlay,#summon-modal,#taunt-modal{background:rgba(0,0,0,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#settings-box,#create-type-box,#change-name-box,#promo-box,#result-box,#summon-box,#taunt-box,#auth-card,#tos-card,#account-menu{
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-lg);box-shadow:0 40px 80px -30px rgba(0,0,0,.95);
+  animation:modalIn .32s var(--ease) both}
+@keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+#settings-box h3,#create-type-box h3,#change-name-box h3,#promo-box h3,#summon-box h3,#taunt-box h3{font-size:1.6rem;font-weight:600;letter-spacing:.01em;text-transform:none;color:var(--text)}
+#result-title{font-size:2.2rem;font-weight:600;color:var(--text);letter-spacing:.01em}
+#result-icon{filter:none}
+#account-menu{animation:menuIn .22s var(--ease) both}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.am-item{border-radius:var(--r-sm)}
+.am-item:hover{background:var(--gold-dim)}
+#auth-screen,#tos-screen{background:var(--bg)}
+.theme-card,.ui-card{border-radius:var(--r-md)}
+.mt-opt{border-radius:var(--r-sm)}
+.mt-opt.active{background:var(--gold-dim) !important;border-color:var(--gold);color:var(--gold)}
+
+/* ---------- lists ---------- */
+.public-room,.live-game,.lb-row{transition:border-color .25s var(--ease),transform .25s var(--ease),background .25s var(--ease)}
+.public-room:hover,.live-game:hover,.lb-row:hover{border-color:color-mix(in srgb,var(--gold) 40%,transparent);background:color-mix(in srgb,var(--gold) 3%,var(--surface));transform:translateY(-1px)}
+.lb-row.lb-you{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.lb-wins{font-family:var(--serif) !important;font-weight:600}
+.shop-item{border-radius:var(--r-md)}
+.shop-item:hover{border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+
+/* ---------- chessboard ---------- */
+#board-wrap,#spectate-board-wrap{border:1px solid color-mix(in srgb,var(--gold) 42%,transparent);border-radius:var(--r-sm);
+  padding:0;background:var(--dark-sq);box-shadow:0 0 0 6px #0d0d0d,0 0 0 7px rgba(255,255,255,.05),0 40px 80px -30px rgba(0,0,0,.95)}
+.coord-file,.coord-rank{font-family:var(--sans) !important;font-weight:600;font-size:clamp(8px,1.2vw,11px);opacity:.75}
+.sq.selected{background:color-mix(in srgb,var(--white-sq) 30%,var(--gold)) !important;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--gold) 85%,#000)}
+.sq.dark.selected{background:color-mix(in srgb,var(--dark-sq) 35%,var(--gold)) !important}
+.sq.light.last-from,.sq.light.last-to{background:color-mix(in srgb,var(--white-sq) 62%,var(--gold)) !important}
+.sq.dark.last-from,.sq.dark.last-to{background:color-mix(in srgb,var(--dark-sq) 62%,var(--gold)) !important}
+.sq.moveable::after{width:24%;height:24%;background:color-mix(in srgb,var(--gold) 80%,#2a2216);box-shadow:0 0 0 2px rgba(8,8,8,.25);opacity:.85}
+.sq.moveable:hover::after{transform:scale(1.2);background:var(--gold)}
+.sq.moveable.occupied::after{width:90%;height:90%;background:transparent;box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--gold) 85%,transparent);opacity:1}
+.sq.moveable.occupied:hover::after{box-shadow:inset 0 0 0 4px var(--gold);transform:none}
+.sq:hover::before{background:rgba(255,255,255,.06)}
+.piece-img{filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+
+/* ---------- home hero ---------- */
+#lobby{max-width:1040px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+#lobby>#home-hero,#lobby>#player-name-display,#lobby>#rank-card,#lobby>#lobby-status{grid-column:1/-1}
+#lobby>#player-name-display{justify-self:center}
+#home-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:32px;align-items:center;padding:44px 44px;
+  background:linear-gradient(180deg,rgba(255,255,255,.015),transparent),var(--surface);border:1px solid var(--hair);border-radius:var(--r-lg);
+  position:relative;overflow:hidden;animation:fadeUp .6s var(--ease) both}
+#home-hero::before{content:'';position:absolute;top:0;left:44px;right:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+.hero-eyebrow{font-size:.66rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.hero-title{font-size:clamp(2.3rem,5vw,3.8rem);font-weight:600;line-height:1.02;color:var(--text);letter-spacing:-.005em;margin-bottom:16px}
+.hero-title em{color:var(--gold);font-style:italic;font-weight:500}
+.hero-sub{color:var(--muted);font-size:.98rem;line-height:1.7;max-width:46ch;margin-bottom:26px}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px}
+.hero-stats{display:flex;gap:34px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:20px;margin:0}
+.hero-stats div{display:flex;flex-direction:column;gap:4px}
+.hero-stats dt{font-family:var(--serif) !important;font-size:1.9rem;font-weight:600;color:var(--text);line-height:1}
+.hero-stats dd{margin:0;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.hero-art{display:flex;align-items:center;justify-content:center;perspective:900px}
+.hero-board{display:grid;grid-template-columns:repeat(5,1fr);width:min(100%,330px);aspect-ratio:1;border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);
+  box-shadow:0 0 0 6px #0d0d0d,0 0 0 7px rgba(255,255,255,.05),0 50px 90px -30px rgba(0,0,0,.95);
+  transform:rotateX(18deg) rotateZ(-8deg);animation:heroFloat 9s ease-in-out infinite alternate}
+@keyframes heroFloat{to{transform:rotateX(14deg) rotateZ(-6deg) translateY(-6px)}}
+.hb-sq{position:relative;display:flex;align-items:center;justify-content:center}
+.hb-sq.l{background:var(--white-sq)}
+.hb-sq.d{background:var(--dark-sq)}
+.hb-sq img{width:82%;height:82%;object-fit:contain;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45));transform:translateZ(0)}
+@media(max-width:860px){
+  #lobby{grid-template-columns:1fr}
+  #home-hero{grid-template-columns:1fr;padding:30px 22px;gap:22px;text-align:left}
+  #home-hero::before{left:22px;right:22px}
+  .hero-art{order:-1}
+  .hero-board{width:min(70vw,240px)}
+  .hero-stats{gap:22px}
+}
+
+/* ---------- small things ---------- */
+#toast{background:var(--surface);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);border-radius:var(--r-sm);
+  font-size:.78rem;letter-spacing:.02em;box-shadow:0 20px 40px -20px rgba(0,0,0,.9)}
+#settings-btn,#account-btn{background:var(--surface) !important;border:1px solid var(--hair) !important;box-shadow:none !important}
+#settings-btn:hover,#account-btn:hover{border-color:var(--gold) !important}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12)}
+#lobby>*,#public-page>*,#live-page>*,#shop-page>*,#leaderboard-page>*,#game>*{animation:fadeUp .45s var(--ease) both}
+#lobby>*:nth-child(2){animation-delay:.05s} #lobby>*:nth-child(3){animation-delay:.1s} #lobby>*:nth-child(4){animation-delay:.15s} #lobby>*:nth-child(5){animation-delay:.2s}
+
+input::placeholder{font-family:var(--sans) !important;letter-spacing:.02em}
+.rc-name{font-size:1.3rem;font-weight:600;letter-spacing:.01em;color:var(--text)}
+.rc-name .title-badge{font-family:var(--sans) !important}
+/* music player in the Noir style */
+#music-panel{background:rgba(14,14,14,.94) !important;border:1px solid var(--hair) !important;border-radius:var(--r-lg) !important;
+  box-shadow:0 30px 60px -25px rgba(0,0,0,.95) !important;backdrop-filter:blur(10px)}
+#music-handle{background:rgba(14,14,14,.94) !important;border:1px solid var(--hair) !important;box-shadow:none !important}
+#music-handle:hover{border-color:var(--gold) !important}
+.music-btn{background:transparent !important;border:1px solid var(--hair) !important;box-shadow:none !important;color:var(--gold) !important}
+.music-btn:hover{border-color:var(--gold) !important;background:var(--gold-dim) !important}
+#music-btn-play{background:var(--gold) !important;color:#0b0a08 !important;border-color:var(--gold) !important;box-shadow:none !important;animation:none !important}
+#music-btn-play:hover{background:var(--gold-light) !important}
+#music-vol-wrap{background:transparent !important;border:1px solid var(--hair) !important;box-shadow:none !important}
+#music-info{background:rgba(14,14,14,.94) !important;border:1px solid var(--hair) !important;box-shadow:none !important}
+#music-icon{background:transparent !important;border:1px solid var(--hair) !important;box-shadow:none !important}
 </style>
 </head>
 
@@ -3322,6 +3521,24 @@ html.scene-cover body > *:not(.fullscreen-scene) *{animation-play-state:paused !
 </div>
 
 <div id="lobby">
+  <section id="home-hero">
+    <div class="hero-copy">
+      <div class="hero-eyebrow">Online Chess Club · Est. 2026</div>
+      <h2 class="hero-title">Every move,<br><em>deliberate.</em></h2>
+      <p class="hero-sub">Challenge a friend in a private room, take a seat in the open lobby, climb from Beginner to Grandmaster, and watch the strongest games live.</p>
+      <div class="hero-cta">
+        <button type="button" onclick="openCreateType()">Play now</button>
+        <button type="button" class="ghost" onclick="showPage('public')">Browse lobbies</button>
+      </div>
+      <dl class="hero-stats">
+        <div><dt id="hs-live">—</dt><dd>Live games</dd></div>
+        <div><dt id="hs-open">—</dt><dd>Open lobbies</dd></div>
+        <div><dt>15</dt><dd>Ranks to climb</dd></div>
+      </dl>
+    </div>
+    <div class="hero-art" aria-hidden="true"><div class="hero-board" id="hero-board"></div></div>
+  </section>
+
   <div id="player-name-display"></div>
   <div id="rank-card" class="hidden"></div>
 
@@ -4280,6 +4497,7 @@ function musicSetVolume(val){
 ============================================================ */
 
 const THEMES=[
+  {id:'noir',    name:'Noir',     light:'#e7dbc2', dark:'#6e5b40', accent:'#c9a45c'},
   {id:'dark',    name:'Dark',     light:'#ede0c8', dark:'#a07850', accent:'#c9a84c'},
   {id:'light',   name:'Light',    light:'#f7efdc', dark:'#c2a070', accent:'#b8860b'},
   {id:'blue',    name:'Midnight', light:'#c8dce8', dark:'#5a7a94', accent:'#5bc0de'},
@@ -4309,10 +4527,13 @@ function applyTheme(id){
 }
 
 function loadSavedTheme(){
-  let saved='dark';
+  let saved='noir';
   try{
     const s=localStorage.getItem('chess-theme');
     if(s&&THEMES.some(t=>t.id===s)) saved=s;
+    // one-time move from the old default to the new Noir look
+    if(saved==='dark'&&localStorage.getItem('chess-noir-migrated')!=='1'){ saved='noir'; localStorage.setItem('chess-theme','noir'); }
+    localStorage.setItem('chess-noir-migrated','1');
   }catch(e){}
   document.documentElement.dataset.theme=saved;
 }
@@ -4335,7 +4556,7 @@ function buildThemeGrid(){
   const grid=document.getElementById('theme-grid');
   if(!grid) return;
   grid.innerHTML='';
-  const current=document.documentElement.dataset.theme||'dark';
+  const current=document.documentElement.dataset.theme||'noir';
 
   THEMES.forEach(t=>{
     const card=document.createElement('div');
@@ -9642,6 +9863,46 @@ function _applyAdmCats(){
   });
 }
 _applyAdmCats();
+
+/* ============================================================
+   HOME HERO (decorative board + live counts)
+============================================================ */
+(function buildHeroBoard(){
+  const el=document.getElementById('hero-board');
+  if(!el) return;
+  // a fragment of a position: king & queen guarded, knight and bishop poised
+  const pos={ '0,1':'k','0,3':'r','1,0':'p','1,2':'p','2,3':'N','3,1':'B','3,4':'Q','4,2':'K','4,4':'P' };
+  for(let r=0;r<5;r++) for(let c=0;c<5;c++){
+    const sq=document.createElement('div');
+    sq.className='hb-sq '+((r+c)%2?'d':'l');
+    const p=pos[r+','+c];
+    if(p&&PIECE_FILES[p]){
+      const img=document.createElement('img');
+      img.src=pieceUrl(p); img.alt=''; img.draggable=false;
+      img.onerror=()=>{ if(!img.dataset.fb){ img.dataset.fb='1'; img.src='icons/'+PIECE_FILES[p]; } };
+      sq.appendChild(img);
+    }
+    el.appendChild(sq);
+  }
+})();
+async function updateHeroStats(){
+  const live=document.getElementById('hs-live'), open=document.getElementById('hs-open');
+  if(!live||!open) return;
+  const lobby=document.getElementById('lobby');
+  if(!lobby||lobby.classList.contains('hidden')||document.hidden) return;
+  try{
+    const rooms=await fbGet('rooms');
+    let l=0,o=0; const now=Date.now();
+    if(rooms&&typeof rooms==='object') for(const r of Object.values(rooms)){
+      if(!r||!r.white) continue;
+      if(r.status==='playing'&&r.black) l++;
+      else if(r.status==='waiting'&&r.type==='public'&&!r.black&&!(r.expires&&now>r.expires)) o++;
+    }
+    live.textContent=l; open.textContent=o;
+  }catch(e){}
+}
+setTimeout(updateHeroStats,1500);
+setInterval(updateHeroStats,30000);
 </script>
 
 </body>
