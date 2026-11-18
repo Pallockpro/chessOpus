@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="admin-config.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
@@ -2885,6 +2886,32 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 /* paused clock during admin cutscenes */
 .timer-box.paused .t-val{color:var(--muted) !important;animation:none !important}
 .timer-box.paused .t-label::after{content:' · paused';color:var(--gold)}
+
+/* ---------- admin hierarchy ---------- */
+#admin-tools{display:grid !important;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+#admin-tools[style*="display: none"],#admin-tools[style*="display:none"]{display:none !important}
+#admin-tools button{min-width:0;width:100%;padding:9px 8px;font-size:.66rem;letter-spacing:1.2px}
+#admin-tools button[style*="display: none"]{display:none !important}
+#admin-role-badge{grid-column:1/-1;text-align:center;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+#admin-role-badge.role-owner{color:#ffcf5a;text-shadow:0 0 10px rgba(255,190,60,.45)}
+#admin-role-badge.role-mod{color:#8fb8ff}
+#admin-role-badge:empty{display:none}
+#crown-btn{border-color:rgba(255,200,60,.55);color:#ffd36a}
+#crown-btn.armed{color:#3a2600;border-color:#ffd36a;background:linear-gradient(180deg,#ffe58a,#e0a91c);box-shadow:0 0 16px rgba(255,200,60,.55)}
+#timewarp-btn{border-color:rgba(120,220,255,.5);color:#8fe3ff}
+#forcedraw-btn{border-color:rgba(180,180,200,.45);color:#d6d6e6}
+#board.crown-armed .sq{cursor:crosshair}
+#board.crown-armed .sq:has(.piece-wrap):hover::before{background:rgba(255,210,80,.18);outline:2px dashed rgba(255,210,80,.9);outline-offset:-4px}
+.crown-fx{position:absolute;inset:0;pointer-events:none;z-index:6;display:flex;align-items:center;justify-content:center}
+.crown-ring{position:absolute;width:70%;height:70%;border-radius:50%;border:3px solid #ffd36a;box-shadow:0 0 18px #ffbf2e;animation:crownRing .9s ease-out forwards}
+.crown-ring.r2{animation-delay:.18s;opacity:0}
+@keyframes crownRing{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.8);opacity:0}}
+.crown-icon{position:absolute;top:-10%;font-size:clamp(14px,3.2vw,30px);filter:drop-shadow(0 0 6px #ffbf2e);animation:crownRise 1.6s ease-out forwards}
+@keyframes crownRise{0%{transform:translateY(40%) scale(.4);opacity:0}25%{transform:translateY(0) scale(1.15);opacity:1}75%{opacity:1}100%{transform:translateY(-60%) scale(1);opacity:0}}
+.timer-box.warp{animation:timeWarp 1.1s ease-out}
+@keyframes timeWarp{0%{box-shadow:0 0 0 0 rgba(120,220,255,.9)}40%{box-shadow:0 0 0 10px rgba(120,220,255,.25),0 0 30px rgba(120,220,255,.7)}100%{box-shadow:0 0 0 0 rgba(120,220,255,0)}}
+.timer-box.warp .t-val{animation:warpSpin 1.1s ease-out}
+@keyframes warpSpin{0%{transform:rotateX(0);color:#8fe3ff}50%{transform:rotateX(360deg);color:#8fe3ff}100%{transform:rotateX(360deg)}}
 </style>
 </head>
 
@@ -2914,6 +2941,9 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
   </div>
   <button class="am-item" onclick="openChangeName()">
     <span class="am-icon">✏</span> Change Display Name
+  </button>
+  <button class="am-item" id="am-console" style="display:none;" onclick="location.href='console/'">
+    <span class="am-icon">🛡</span> Owner Console
   </button>
   <button class="am-item" onclick="signOutUser()">
     <span class="am-icon">↪</span> Sign Out
@@ -3202,9 +3232,13 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
   </div>
 
   <div id="admin-tools" style="display:none;">
+    <div id="admin-role-badge"></div>
     <button class="ghost" id="admin-bypass-btn" onclick="toggleAdminBypass()" style="display:none;">Admin Bypass: Off</button>
     <button class="ghost" id="chili-strike-btn" onclick="toggleChiliStrike()" style="display:none;" title="Click any piece to blow it up">🌶 Chili Strike: Off</button>
     <button class="ghost" id="evict-btn" onclick="toggleEvict()" style="display:none;" title="Click any piece to eject it into space">🚀 Evict: Off</button>
+    <button class="ghost" id="timewarp-btn" onclick="useTimeWarp()" style="display:none;" title="Refill your clock to full">⏳ Time Warp</button>
+    <button class="ghost" id="crown-btn" onclick="toggleCrown()" style="display:none;" title="Turn one of your pieces into a queen">👑 Coronation: Off</button>
+    <button class="ghost" id="forcedraw-btn" onclick="useForceDraw()" style="display:none;" title="End the game as a draw">🤝 Force Draw</button>
   </div>
 
   <div id="game-chat" class="chat-panel">
@@ -3374,14 +3408,10 @@ try{
    SHOP — SKINS
 ============================================================ */
 
-const SPECIAL_EMAILS = [
-  'chilten44pallock@gmail.com',
-  '30copallock@pulaskischools.org',
-  'coltenboop@gmail.com',
-  'blueberryggames@gmail.com',
-  '30chborseth@pulaskischools.org',
-  '30antepatlan@pulaskischools.org'
-].map(e => e.toLowerCase());
+const ADMIN_CFG = window.ADMIN_CONFIG || { owners:[], mods:[], abilities:[] };
+const OWNER_EMAILS = (ADMIN_CFG.owners||[]).map(e => String(e).trim().toLowerCase());
+const MOD_EMAILS   = (ADMIN_CFG.mods||[]).map(e => String(e).trim().toLowerCase());
+const SPECIAL_EMAILS = OWNER_EMAILS.concat(MOD_EMAILS);
 
 const RAINBOW_GRADIENT = 'linear-gradient(135deg,#ff3b3b 0%,#ff9f1c 17%,#ffe135 33%,#3ddc84 50%,#2ec4ff 67%,#5b6cff 83%,#c04dff 100%)';
 // first and last colour match so the animation loops with no jump
@@ -3592,10 +3622,49 @@ function findSkin(id){
 
 /* ---------- access rules ---------- */
 
-function isSpecialUser(){
-  if(isGuest || !currentUser || !currentUser.email) return false;
-  if(currentUser.emailVerified === false) return false;
-  return SPECIAL_EMAILS.indexOf(String(currentUser.email).trim().toLowerCase()) !== -1;
+function _verifiedEmail(){
+  if(isGuest || !currentUser || !currentUser.email) return '';
+  if(currentUser.emailVerified === false) return '';
+  return String(currentUser.email).trim().toLowerCase();
+}
+// mods added from /console live in the database, as do the abilities owners grant mods
+let _extraMods={};   // { key: email }
+let _myGrants={};    // { abilityId: true|false }
+// database-safe key for an email: letters/digits kept, everything else -> _hex  (a@b.c -> a_40b_2ec)
+function adminKey(email){ return String(email).trim().toLowerCase().replace(/[^a-z0-9]/g,ch=>'_'+ch.charCodeAt(0).toString(16)); }
+function isOwner(){
+  const e=_verifiedEmail();
+  return !!e && OWNER_EMAILS.includes(e);
+}
+function isMod(){
+  const e=_verifiedEmail();
+  if(!e || isOwner()) return false;
+  return MOD_EMAILS.includes(e) || Object.values(_extraMods||{}).some(x=>String(x).trim().toLowerCase()===e);
+}
+function isSpecialUser(){ return isOwner() || isMod(); }
+function adminRole(){ return isOwner()?'owner':isMod()?'mod':''; }
+function hasAbility(id){
+  if(isOwner()) return true;
+  if(!isMod()) return false;
+  const ab=(ADMIN_CFG.abilities||[]).find(a=>a.id===id);
+  if(!ab) return false;
+  const g=_myGrants&&_myGrants[id];
+  return (g===undefined||g===null) ? !!ab.modDefault : !!g;
+}
+async function loadAdminData(){
+  const e=_verifiedEmail();
+  if(!e){ _extraMods={}; _myGrants={}; refreshAdminUi(); return; }
+  try{
+    const [mods,grants]=await Promise.all([fbGet('adminMods'),fbGet(`adminGrants/${adminKey(e)}`)]);
+    _extraMods=(mods&&typeof mods==='object')?mods:{};
+    _myGrants=(grants&&typeof grants==='object')?grants:{};
+  }catch(err){}
+  refreshAdminUi();
+}
+function refreshAdminUi(){
+  const c=document.getElementById('am-console');
+  if(c) c.style.display=isOwner()?'':'none';
+  if(typeof refreshAdminBypassBtn==='function') refreshAdminBypassBtn();
 }
 
 function isSkinVisible(skin){
@@ -4756,6 +4825,7 @@ function finishAuth(){
   renderAccountInfo();
   checkAutoJoin();
   loadPublicRooms();
+  loadAdminData();
 }
 
 function updatePlayerNameDisplay(){
@@ -5836,6 +5906,7 @@ function startGame(){
   coinsAwardedThisGame=false;
   adminBypassOn=false;
   refreshAdminBypassBtn();
+  loadAdminData();
 
   if(gameEndReturnTimer){ clearInterval(gameEndReturnTimer); gameEndReturnTimer=null; }
   if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
@@ -6040,6 +6111,10 @@ async function pollMoves(){
         applyChiliExplosion(md.r,md.c,false);
       }else if(md&&md.evict){
         applyChiliExplosion(md.r,md.c,false,'evict');
+      }else if(md&&md.timewarp){
+        applyTimeWarp(md.color,false);
+      }else if(md&&md.crown){
+        applyCrown(md.r,md.c,false);
       }else if(md){
         const remoteColor=myColor==='w'?'b':'w';
         if(md.color&&md.color!==remoteColor) return;
@@ -6679,13 +6754,13 @@ let pendingPromo=null;
 let adminBypassOn=false;
 
 function adminBypassActive(){
-  return adminBypassOn && isSpecialUser();
+  return adminBypassOn && hasAbility('bypass');
 }
 
 function refreshAdminBypassBtn(){
   const btn=document.getElementById('admin-bypass-btn');
   if(!btn) return;
-  const allowed=isSpecialUser();
+  const allowed=hasAbility('bypass');
   btn.style.display=allowed?'':'none';
   if(!allowed) adminBypassOn=false;
   btn.textContent='Admin Bypass: '+(adminBypassOn?'On':'Off');
@@ -6694,8 +6769,9 @@ function refreshAdminBypassBtn(){
 }
 
 function toggleAdminBypass(){
-  if(!isSpecialUser()) return;
+  if(!hasAbility('bypass')) return;
   adminBypassOn=!adminBypassOn;
+  if(adminBypassOn) _disarmAll('bypass');
   selected=null;
   legalNow=[];
   refreshAdminBypassBtn();
@@ -6830,6 +6906,10 @@ function handleSquareClick(r,c){
     if(G.board[r][c]) chiliEvict(r,c);
     return;
   }
+  if(crownActive()){
+    if(G.board[r][c]) crownPiece(r,c);
+    return;
+  }
 
   const p=G.board[r][c];
 
@@ -6907,6 +6987,7 @@ function renderBoard(){
   boardEl.innerHTML='';
   boardEl.classList.toggle('chili-armed',chiliStrikeActive());
   boardEl.classList.toggle('evict-armed',evictActive());
+  boardEl.classList.toggle('crown-armed',crownActive());
 
   const flip=myColor==='b';
   const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
@@ -7307,34 +7388,47 @@ function pieceDisplayName(p){
   return (colorOf(p)==='w'?'White':'Black')+' '+kind;
 }
 
-function chiliStrikeAllowed(){
-  return isSpecialUser() && getMyEquippedSkin()==='chili';
-}
+function chiliStrikeAllowed(){ return hasAbility('chili'); }
 function chiliStrikeActive(){
   return chiliStrikeOn && chiliStrikeAllowed();
 }
+// only one "click a piece" mode can be armed at once
+function _disarmAll(except){
+  if(except!=='bypass') adminBypassOn=false;
+  if(except!=='chili') chiliStrikeOn=false;
+  if(except!=='evict') evictOn=false;
+  if(except!=='crown') crownOn=false;
+}
+function _setArmedBtn(id,show,on,label){
+  const b=document.getElementById(id);
+  if(!b) return;
+  b.style.display=show?'':'none';
+  if(label!=null) b.textContent=label;
+  b.classList.toggle('armed',!!on);
+}
 function refreshChiliStrikeBtn(){
-  const btn=document.getElementById('chili-strike-btn');
   const tools=document.getElementById('admin-tools');
-  const admin=isSpecialUser();
-  const allowed=chiliStrikeAllowed();
-  if(!allowed){ chiliStrikeOn=false; evictOn=false; }
-  const eb=document.getElementById('evict-btn');
-  if(eb){
-    eb.style.display=allowed?'':'none';
-    eb.textContent='🚀 Evict: '+(evictOn?'Armed':'Off');
-    eb.classList.toggle('armed',evictOn);
+  if(!hasAbility('chili')) chiliStrikeOn=false;
+  if(!hasAbility('evict')) evictOn=false;
+  if(!hasAbility('crown')) crownOn=false;
+  const anyAbility=(ADMIN_CFG.abilities||[]).some(a=>hasAbility(a.id));
+  if(tools) tools.style.display=anyAbility?'':'none';
+  const badge=document.getElementById('admin-role-badge');
+  if(badge){
+    const role=adminRole();
+    badge.textContent=role==='owner'?'🛡 Owner':role==='mod'?'🛡 Moderator':'';
+    badge.className=role?('role-'+role):'';
   }
-  if(tools) tools.style.display=admin?'':'none';
-  if(!btn) return;
-  btn.style.display=allowed?'':'none';
-  btn.textContent='🌶 Chili Strike: '+(chiliStrikeOn?'Armed':'Off');
-  btn.classList.toggle('armed',chiliStrikeOn);
+  _setArmedBtn('chili-strike-btn',hasAbility('chili'),chiliStrikeOn,'🌶 Chili Strike: '+(chiliStrikeOn?'Armed':'Off'));
+  _setArmedBtn('evict-btn',hasAbility('evict'),evictOn,'🚀 Evict: '+(evictOn?'Armed':'Off'));
+  _setArmedBtn('crown-btn',hasAbility('crown'),crownOn,'👑 Coronation: '+(crownOn?'Armed':'Off'));
+  _setArmedBtn('timewarp-btn',hasAbility('timewarp'),false,null);
+  _setArmedBtn('forcedraw-btn',hasAbility('forcedraw'),false,null);
 }
 function toggleChiliStrike(){
   if(!chiliStrikeAllowed()) return;
   chiliStrikeOn=!chiliStrikeOn;
-  if(chiliStrikeOn){ adminBypassOn=false; evictOn=false; }
+  if(chiliStrikeOn) _disarmAll('chili');
   selected=null; legalNow=[];
   refreshAdminBypassBtn();
   renderBoard();
@@ -7350,11 +7444,11 @@ function chiliStrike(r,c){
 }
 
 let evictOn=false;
-function evictActive(){ return evictOn && chiliStrikeAllowed(); }
+function evictActive(){ return evictOn && hasAbility('evict'); }
 function toggleEvict(){
-  if(!chiliStrikeAllowed()) return;
+  if(!hasAbility('evict')) return;
   evictOn=!evictOn;
-  if(evictOn){ adminBypassOn=false; chiliStrikeOn=false; }
+  if(evictOn) _disarmAll('evict');
   selected=null; legalNow=[];
   refreshAdminBypassBtn();
   renderBoard();
@@ -7916,6 +8010,81 @@ async function playEjectCutscene(p,sqEl){
     scene.remove();
     chiliFxBusy=false;
   }
+}
+
+/* ============================================================
+   EXTRA ADMIN ABILITIES (owners; mods only when granted in /console)
+============================================================ */
+let crownOn=false;
+function crownActive(){ return crownOn && hasAbility('crown'); }
+function toggleCrown(){
+  if(!hasAbility('crown')) return;
+  crownOn=!crownOn;
+  if(crownOn) _disarmAll('crown');
+  selected=null; legalNow=[];
+  refreshAdminBypassBtn();
+  renderBoard();
+  if(crownOn) showToast('👑 Coronation armed — click one of your pieces',2200);
+}
+function crownPiece(r,c){
+  if(!crownActive()||chiliFxBusy||gameEnded) return;
+  const p=G.board[r][c];
+  if(!p) return;
+  if(colorOf(p)!==myColor){ showToast('You can only crown your own pieces',2000); return; }
+  if('kq'.includes(p.toLowerCase())){ showToast('That piece is already royalty 👑',2000); return; }
+  applyCrown(r,c,true);
+}
+function applyCrown(r,c,local){
+  if(gameEnded) return;
+  const p=G.board[r]?.[c];
+  if(!p||'kq'.includes(p.toLowerCase())) return;
+  const before=pieceDisplayName(p);
+  const q=colorOf(p)==='w'?'Q':'q';
+  G.board[r][c]=q;
+  if(p==='R'&&r===7&&c===0) G.castling.wQR=false;
+  if(p==='R'&&r===7&&c===7) G.castling.wKR=false;
+  if(p==='r'&&r===0&&c===0) G.castling.bQR=false;
+  if(p==='r'&&r===0&&c===7) G.castling.bKR=false;
+  G.halfClock=0;
+  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
+  G.status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
+  selected=null; legalNow=[];
+  if(local) sendMoveData({crown:true,r,c,piece:p,color:myColor}).catch(()=>{});
+  renderBoard(); updateUI(); renderTimers();
+  const sq=document.querySelector(`#board .sq[data-r="${r}"][data-c="${c}"]`);
+  if(sq){
+    const fx=document.createElement('div');
+    fx.className='crown-fx';
+    fx.innerHTML='<span class="crown-ring"></span><span class="crown-ring r2"></span><span class="crown-icon">👑</span>';
+    sq.appendChild(fx);
+    setTimeout(()=>fx.remove(),1700);
+  }
+  if(_moveSoundsOn){ playMoveSound('end'); }
+  showToast(`👑 ${before} was crowned a Queen`,2600);
+}
+
+function useTimeWarp(){
+  if(!hasAbility('timewarp')||gameEnded||!gameStarted) return;
+  if(G.turn!==myColor){ showToast('Time Warp only works on your turn',2000); return; }
+  applyTimeWarp(myColor,true);
+}
+function applyTimeWarp(color,local){
+  if(gameEnded||(color!=='w'&&color!=='b')) return;
+  moveTimeLeft[color]=MOVE_TIME;
+  if(G.turn===color){ turnStartedAt=Date.now(); _timerPause=null; }
+  if(local) sendMoveData({timewarp:true,color}).catch(()=>{});
+  renderTimers();
+  const box=document.getElementById(color==='w'?'timer-white':'timer-black');
+  if(box){ box.classList.remove('warp'); void box.offsetWidth; box.classList.add('warp'); setTimeout(()=>box.classList.remove('warp'),1200); }
+  showToast(local?'⏳ Time Warp — your clock is full again':'⏳ Your opponent warped their clock',2400);
+}
+
+function useForceDraw(){
+  if(!hasAbility('forcedraw')||gameEnded||!gameStarted) return;
+  if(!confirm('Force this game to end in a draw?')) return;
+  const reason='Draw declared by an admin';
+  broadcastEnd('draw',reason);
+  triggerGameEnd('draw','draw',reason);
 }
 </script>
 

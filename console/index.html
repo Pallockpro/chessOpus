@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Owner Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="../admin-config.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --gold:#c9a84c; --gold-light:#e8c97a; --gold-dim:rgba(201,168,76,.18);
+    --bg:#0d0d14; --surface:#13131f; --surface2:#1a1a2c;
+    --border:rgba(201,168,76,.2); --text:#e8e0d0; --muted:#8a8070;
+    --ok:#5ec27a; --bad:#e05252; --mod:#8fb8ff;
+  }
+  body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;
+    background-image:radial-gradient(ellipse at 50% -10%,rgba(201,168,76,.14) 0%,transparent 55%);
+    padding:28px 16px 60px;display:flex;flex-direction:column;align-items:center;gap:18px}
+  h1{font-family:'Cinzel',serif;letter-spacing:5px;font-size:clamp(1.2rem,4vw,1.8rem);text-align:center;
+    background:linear-gradient(180deg,var(--gold-light),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--muted);text-align:center;margin-top:-10px}
+  .wrap{width:100%;max-width:860px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden;box-shadow:0 10px 36px rgba(0,0,0,.28)}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-light),transparent);opacity:.45}
+  .card h2{font-family:'Cinzel',serif;color:var(--gold);letter-spacing:3px;font-size:.95rem;text-transform:uppercase;margin-bottom:10px}
+  .card p{color:var(--muted);line-height:1.5}
+  button{background:linear-gradient(180deg,var(--gold-light),var(--gold));color:#1a1408;border:none;padding:10px 20px;border-radius:9px;
+    font-family:'Cinzel',serif;font-weight:700;font-size:.74rem;letter-spacing:2px;cursor:pointer;transition:transform .1s,filter .15s}
+  button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  button.ghost{background:transparent;color:var(--gold);border:1px solid var(--border)}
+  button.ghost:hover{background:var(--gold-dim)}
+  button.danger{background:transparent;color:var(--bad);border:1px solid rgba(224,82,82,.45)}
+  button.danger:hover{background:rgba(224,82,82,.12)}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+  input[type=email]{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:9px;
+    font-family:'Crimson Pro',serif;font-size:1rem;flex:1;min-width:0;outline:none}
+  input[type=email]:focus{border-color:var(--gold)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .center{text-align:center}
+  .me{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .me .who{font-size:1.05rem}
+  .me .who strong{color:var(--gold-light)}
+  .badge{display:inline-block;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:2px;padding:3px 9px;border-radius:999px;text-transform:uppercase;vertical-align:middle}
+  .badge.owner{color:#ffcf5a;border:1px solid rgba(255,200,80,.5);background:rgba(255,200,80,.08)}
+  .badge.modb{color:var(--mod);border:1px solid rgba(143,184,255,.45);background:rgba(143,184,255,.08)}
+  .badge.added{color:var(--muted);border:1px solid var(--border)}
+  .owners{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .owners li{list-style:none;display:flex;justify-content:space-between;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:9px;word-break:break-all}
+  .mods{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+  .mod{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .mod-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .mod-email{font-weight:600;word-break:break-all}
+  .abilities{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+  .ab{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;border-radius:9px;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
+  .ab:hover{background:rgba(255,255,255,.03);border-color:var(--border)}
+  .ab input{position:absolute;opacity:0;width:1px;height:1px}
+  .sw{flex:none;width:38px;height:21px;border-radius:999px;background:#2a2a3c;border:1px solid var(--border);position:relative;margin-top:2px;transition:background .2s}
+  .sw::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
+  .ab input:checked + .sw{background:var(--gold-dim);border-color:var(--gold)}
+  .ab input:checked + .sw::after{transform:translateX(17px);background:var(--gold)}
+  .ab input:focus-visible + .sw{outline:2px solid var(--gold-light);outline-offset:2px}
+  .ab .t{font-weight:600}
+  .ab .d{color:var(--muted);font-size:.86rem;line-height:1.3}
+  .ab .def{color:var(--gold);font-size:.72rem;font-family:'Cinzel',serif;letter-spacing:1px;margin-left:4px}
+  .empty{color:var(--muted);font-style:italic;text-align:center;padding:10px}
+  .google{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#333;font-family:'Crimson Pro',serif;font-weight:600;font-size:1rem;letter-spacing:0}
+  .google svg{width:18px;height:18px}
+  .denied{color:var(--bad);font-family:'Cinzel',serif;letter-spacing:2px}
+  .note{font-size:.88rem;color:var(--muted);line-height:1.45}
+  .hidden{display:none !important}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(90px);background:var(--surface);border:1px solid var(--gold);
+    color:var(--text);padding:10px 20px;border-radius:9px;font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:1px;transition:transform .3s;z-index:50;max-width:calc(100% - 32px)}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.err{border-color:var(--bad)}
+  a{color:var(--gold-light)}
+  @media(max-width:520px){ .card{padding:16px 14px} .abilities{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+  <h1>🛡 Owner Console</h1>
+  <p class="sub">Manage moderators and what they're allowed to use.</p>
+
+  <div class="wrap">
+    <!-- signed out -->
+    <div class="card center" id="signin-card">
+      <h2>Owners only</h2>
+      <p style="margin-bottom:16px">Sign in with the Google account of an owner to continue.</p>
+      <button class="google" onclick="signIn()">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Sign in with Google
+      </button>
+      <p class="note" id="signin-status" style="margin-top:12px"></p>
+      <p style="margin-top:14px"><a href="../">← Back to the game</a></p>
+    </div>
+
+    <!-- signed in but not an owner -->
+    <div class="card center hidden" id="denied-card">
+      <h2 class="denied">Access denied</h2>
+      <p style="margin-bottom:14px">Only owners can open the console. You're signed in as <strong id="denied-email"></strong>.</p>
+      <div class="row" style="justify-content:center">
+        <button class="ghost" onclick="signOut()">Sign out</button>
+        <button onclick="location.href='../'">Back to the game</button>
+      </div>
+    </div>
+
+    <!-- owner view -->
+    <div id="owner-view" class="hidden" style="display:flex;flex-direction:column;gap:16px">
+      <div class="card me">
+        <div class="who">Signed in as <strong id="me-email"></strong> <span class="badge owner">Owner</span></div>
+        <div class="row">
+          <button class="ghost" onclick="location.href='../'">Back to game</button>
+          <button class="ghost" onclick="signOut()">Sign out</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Moderators</h2>
+        <p>Mods can use <strong>Admin Bypass</strong> by default. Switch on anything else you want a mod to have — changes save instantly and apply the next time they start a game.</p>
+        <div class="mods" id="mods"><div class="empty">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Add a moderator</h2>
+        <p style="margin-bottom:12px">They must sign in to the game with this Google account.</p>
+        <div class="row">
+          <input type="email" id="new-mod" placeholder="name@example.com" autocomplete="off" spellcheck="false">
+          <button onclick="addMod()">Add mod</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Owners</h2>
+        <p>Owners can use every ability and open this console. The owner list is set in <code>admin-config.js</code>.</p>
+        <ul class="owners" id="owners"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyCJJSE203Fevjy9u2SV4eI4jDXF6fJzaZ4",
+  authDomain:"chest-188bb.firebaseapp.com",
+  databaseURL:"https://chest-188bb-default-rtdb.firebaseio.com",
+  projectId:"chest-188bb",
+  appId:"1:205821111046:web:514731313d2a5f9cc10c87"
+};
+const FB=FIREBASE_CONFIG.databaseURL;
+const CFG=window.ADMIN_CONFIG||{owners:[],mods:[],abilities:[]};
+const OWNERS=(CFG.owners||[]).map(e=>String(e).trim().toLowerCase());
+const BUILTIN_MODS=(CFG.mods||[]).map(e=>String(e).trim().toLowerCase());
+const ABILITIES=CFG.abilities||[];
+
+let auth=null, me='';
+let extraMods={}, grants={};
+
+// same key format as the game: letters/digits kept, everything else -> _hex
+function safeKey(s){ return String(s).trim().toLowerCase().replace(/[^a-z0-9]/g,ch=>'_'+ch.charCodeAt(0).toString(16)); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function fbGet(p){ try{ const r=await fetch(`${FB}/${p}.json`,{cache:'no-store'}); return r.ok?r.json():null; }catch(e){ return null; } }
+async function fbPut(p,d){ try{ const r=await fetch(`${FB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }catch(e){ return false; } }
+async function fbDel(p){ try{ const r=await fetch(`${FB}/${p}.json`,{method:'DELETE'}); return r.ok; }catch(e){ return false; } }
+
+let _tt=null;
+function toast(msg,err){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.toggle('err',!!err); t.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function show(id){ ['signin-card','denied-card','owner-view'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id)); }
+
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth=firebase.auth();
+  auth.onAuthStateChanged(onUser);
+}catch(e){
+  document.getElementById('signin-status').textContent='Could not load sign-in. Refresh the page.';
+}
+
+async function signIn(){
+  if(!auth) return;
+  const st=document.getElementById('signin-status');
+  st.textContent='Opening Google sign-in…';
+  try{
+    const p=new firebase.auth.GoogleAuthProvider();
+    p.setCustomParameters({prompt:'select_account'});
+    await auth.signInWithPopup(p);
+  }catch(e){
+    st.textContent=e&&e.code==='auth/popup-closed-by-user'?'Sign-in cancelled.':'Sign-in failed. Try again.';
+  }
+}
+async function signOut(){ try{ await auth.signOut(); }catch(e){} }
+
+function onUser(user){
+  if(!user){ me=''; show('signin-card'); document.getElementById('signin-status').textContent=''; return; }
+  const email=String(user.email||'').trim().toLowerCase();
+  if(!email||user.emailVerified===false||!OWNERS.includes(email)){
+    document.getElementById('denied-email').textContent=user.email||'an unknown account';
+    show('denied-card');
+    return;
+  }
+  me=email;
+  document.getElementById('me-email').textContent=user.email;
+  show('owner-view');
+  document.getElementById('owner-view').style.display='flex';
+  renderOwners();
+  loadData();
+}
+
+function renderOwners(){
+  document.getElementById('owners').innerHTML=OWNERS.map(e=>
+    `<li><span>${esc(e)}</span>${e===me?'<span class="badge owner">You</span>':'<span class="badge owner">Owner</span>'}</li>`).join('');
+}
+
+async function loadData(){
+  const [m,g]=await Promise.all([fbGet('adminMods'),fbGet('adminGrants')]);
+  extraMods=(m&&typeof m==='object')?m:{};
+  grants=(g&&typeof g==='object')?g:{};
+  renderMods();
+}
+
+function allMods(){
+  const list=BUILTIN_MODS.map(e=>({email:e,builtin:true}));
+  Object.values(extraMods).forEach(e=>{
+    e=String(e).trim().toLowerCase();
+    if(e && !OWNERS.includes(e) && !list.some(x=>x.email===e)) list.push({email:e,builtin:false});
+  });
+  return list;
+}
+function grantValue(email,ab){
+  const g=grants[safeKey(email)]||{};
+  return (g[ab.id]===undefined||g[ab.id]===null)?!!ab.modDefault:!!g[ab.id];
+}
+
+function renderMods(){
+  const box=document.getElementById('mods');
+  const mods=allMods();
+  if(!mods.length){ box.innerHTML='<div class="empty">No moderators yet.</div>'; return; }
+  box.innerHTML=mods.map(m=>{
+    const key=safeKey(m.email);
+    const abs=ABILITIES.map(ab=>`
+      <label class="ab">
+        <input type="checkbox" ${grantValue(m.email,ab)?'checked':''} data-email="${esc(m.email)}" data-ab="${esc(ab.id)}" onchange="setGrant(this)">
+        <span class="sw" aria-hidden="true"></span>
+        <span><span class="t">${esc(ab.icon||'')} ${esc(ab.name)}</span>${ab.modDefault?'<span class="def">default</span>':''}<br><span class="d">${esc(ab.desc||'')}</span></span>
+      </label>`).join('');
+    return `<div class="mod">
+      <div class="mod-head">
+        <div><span class="mod-email">${esc(m.email)}</span> <span class="badge modb">Mod</span> ${m.builtin?'':'<span class="badge added">Added here</span>'}</div>
+        <div class="row">
+          <button class="ghost" data-email="${esc(m.email)}" onclick="resetMod(this.dataset.email)">Reset to default</button>
+          ${m.builtin?'':`<button class="danger" data-email="${esc(m.email)}" onclick="removeMod(this.dataset.email)">Remove mod</button>`}
+        </div>
+      </div>
+      <div class="abilities">${abs}</div>
+    </div>`;
+  }).join('');
+}
+
+async function setGrant(el){
+  const email=el.dataset.email, id=el.dataset.ab, on=el.checked;
+  if(!me) return;
+  el.disabled=true;
+  const ok=await fbPut(`adminGrants/${safeKey(email)}/${encodeURIComponent(id)}`,on);
+  el.disabled=false;
+  if(!ok){ el.checked=!on; toast('Could not save — try again',true); return; }
+  const k=safeKey(email); grants[k]=grants[k]||{}; grants[k][id]=on;
+  const ab=ABILITIES.find(a=>a.id===id);
+  toast(`${ab?ab.name:id} ${on?'granted to':'removed from'} ${email}`);
+}
+
+async function resetMod(email){
+  if(!me) return;
+  if(!confirm(`Reset ${email} to the default mod abilities?`)) return;
+  const ok=await fbDel(`adminGrants/${safeKey(email)}`);
+  if(!ok){ toast('Could not reset — try again',true); return; }
+  delete grants[safeKey(email)];
+  renderMods(); toast(`${email} reset to defaults`);
+}
+
+async function addMod(){
+  if(!me) return;
+  const inp=document.getElementById('new-mod');
+  const email=inp.value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('Enter a valid email address',true); return; }
+  if(OWNERS.includes(email)){ toast('That account is already an owner',true); return; }
+  if(allMods().some(m=>m.email===email)){ toast('That account is already a mod',true); return; }
+  const ok=await fbPut(`adminMods/${safeKey(email)}`,email);
+  if(!ok){ toast('Could not add — try again',true); return; }
+  extraMods[safeKey(email)]=email; inp.value='';
+  renderMods(); toast(`${email} is now a mod`);
+}
+
+async function removeMod(email){
+  if(!me) return;
+  if(!confirm(`Remove ${email} as a moderator?`)) return;
+  const k=safeKey(email);
+  const ok=await fbDel(`adminMods/${k}`);
+  if(!ok){ toast('Could not remove — try again',true); return; }
+  await fbDel(`adminGrants/${k}`);
+  delete extraMods[k]; delete grants[k];
+  renderMods(); toast(`${email} is no longer a mod`);
+}
+
+document.getElementById('new-mod').addEventListener('keydown',e=>{ if(e.key==='Enter') addMod(); });
+</script>
+</body>
+</html>
