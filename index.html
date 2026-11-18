@@ -3058,6 +3058,9 @@ html.no-mask .piece-wrap.skin-chili .piece-img{filter:var(--skin-fallback) !impo
 .sb-time{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:2px;color:rgba(255,255,255,.55);text-transform:uppercase}
 .sb-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:1rem;padding:14px 26px;z-index:2}
 .sb-play.hidden{display:none}
+
+/* long toasts wrap instead of running off small screens */
+#toast{white-space:normal;max-width:calc(100vw - 32px);text-align:center;line-height:1.5}
 </style>
 </head>
 
@@ -4539,7 +4542,10 @@ function doMove(board,move,castling,enPassant){
   if(move.tr===0&&move.tc===0) nc.bQR=false;
   if(move.tr===0&&move.tc===7) nc.bKR=false;
 
-  if(pt==='p'&&Math.abs(move.tr-move.fr)===2){
+  // Only a real two-square pawn push from its starting row opens en passant
+  // (an Admin Bypass jump of two rows must not).
+  const startRow=color==='w'?6:1;
+  if(pt==='p'&&!move.bypass&&move.fc===move.tc&&move.fr===startRow&&Math.abs(move.tr-move.fr)===2){
     nep=[(move.fr+move.tr)/2,move.fc];
   }
 
@@ -6404,6 +6410,7 @@ function processSkip(sc){
   if(!sc||G.status!=='playing'||G.turn!==sc) return;
   G.log.push({color:sc,note:'(time)'});
   G.turn=opp(sc);
+  G.enPassant=null;   // the en passant chance is gone once a turn passes
   moveTimeLeft[sc]=MOVE_TIME;
   turnStartedAt=Date.now(); _timerPause=null;
   selected=null;
@@ -7084,7 +7091,7 @@ function executeMove(move,local){
   }
   const usedBypass=!valid;
 
-  const note=toSAN(G.board,move,G.turn,G.castling,G.enPassant);
+  const note=toSAN(G.board,move,G.turn,G.castling,G.enPassant)+(move.isEnPassant?' e.p.':'');
   const isCapture=!!G.board[move.tr][move.tc]||move.isEnPassant;
   const _victim=G.board[move.tr][move.tc]||(move.isEnPassant?(G.turn==='w'?'p':'P'):null);
   const isPawn=p.toLowerCase()==='p';
@@ -7131,6 +7138,7 @@ function executeMove(move,local){
   renderBoard();
   runMoveAnim(_anim);
   if(_revive) triggerReturnByDeath(_victim,currentRoomSkins,true);
+  if(move.isEnPassant) showToast('♟ En passant — a pawn that jumps 2 squares can be taken by the pawn beside it',4200);
   updateUI();
   renderTimers();
 
@@ -8568,7 +8576,7 @@ function toggleRbd(){
   showToast(_rbdPref?'💀 Return by Death ON — your captured pieces come back':'Return by Death is off',2600);
 }
 
-const APP_BUILD='2026-11-18-staff1';
+const APP_BUILD='2026-11-18-ep1';
 const RBD_AUDIO_URL='sounds/return-by-death.mp3';
 let _rbdAudio=null;
 try{ _rbdAudio=new Audio(RBD_AUDIO_URL); _rbdAudio.preload='auto'; }catch(e){}
